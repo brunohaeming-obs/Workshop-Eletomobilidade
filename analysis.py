@@ -1440,6 +1440,22 @@ def write_html(payload: dict) -> None:
         && matchesSelection(company.techGroup, s.techGroup)
         && matchesSelection(company.techDivision, s.techDivision);
     }}
+    function revenueRank(value) {{
+      const label = normalizeText(value);
+      if (label.includes('nao informado') || label.includes('não informado')) return Number.POSITIVE_INFINITY;
+      const firstNumber = label.match(/\\d+(?:[\\.,]\\d+)?/);
+      if (!firstNumber) return Number.POSITIVE_INFINITY - 1;
+      let amount = Number(firstNumber[0].replace(',', '.'));
+      if (label.includes('k')) amount *= 1_000;
+      if (label.includes('m')) amount *= 1_000_000;
+      if (label.includes('b')) amount *= 1_000_000_000;
+      return amount;
+    }}
+    function compareCompaniesByRevenue(a, b) {{
+      const revenueDiff = revenueRank(a.faturamento) - revenueRank(b.faturamento);
+      if (revenueDiff !== 0) return revenueDiff;
+      return String(a.razao).localeCompare(String(b.razao), 'pt-BR');
+    }}
     function filteredCompanies() {{
       const s = selected();
       const term = normalizeText(companySearch.value.trim());
@@ -1460,7 +1476,8 @@ def write_html(payload: dict) -> None:
             company.techDivision
           ].join(' '));
           return text.includes(term);
-        }});
+        }})
+        .sort(compareCompaniesByRevenue);
     }}
     function renderCompanyTable() {{
       const rows = filteredCompanies();

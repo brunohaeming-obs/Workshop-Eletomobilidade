@@ -1123,6 +1123,55 @@ def write_html(payload: dict) -> None:
       border-top: 1px solid var(--line);
       padding-top: 16px;
     }}
+    .ncm-company-panel {{
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(7, 19, 33, .72);
+      overflow: hidden;
+    }}
+    .ncm-company-head {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 13px;
+      border-bottom: 1px solid rgba(138,167,196,.16);
+    }}
+    .ncm-company-head h2 {{
+      margin: 0;
+      font-size: 15px;
+    }}
+    .ncm-company-body {{
+      max-height: 360px;
+      overflow: auto;
+    }}
+    .ncm-company-row {{
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(138,167,196,.12);
+      font-size: 12px;
+    }}
+    .ncm-company-row strong {{
+      display: block;
+      color: #e8f3ff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }}
+    .ncm-company-row small {{
+      display: block;
+      color: var(--muted);
+      margin-top: 3px;
+      line-height: 1.3;
+    }}
+    .ncm-company-row em {{
+      color: var(--cyan);
+      font-style: normal;
+      white-space: nowrap;
+    }}
     .rank-row {{
       display: grid;
       grid-template-columns: 1fr auto;
@@ -1361,6 +1410,16 @@ def write_html(payload: dict) -> None:
         <div id="cnaeDetails"><p>Selecione uma divisão ou grupo CNAE para ver a descrição.</p></div>
       </section>
 
+      <section class="ncm-company-panel">
+        <div class="ncm-company-head">
+          <h2>Empresas relacionadas ao NCM</h2>
+          <button id="refreshNcmCompanies" type="button">Atualizar</button>
+        </div>
+        <div id="ncmCompanyList" class="ncm-company-body">
+          <div class="sub" style="padding:12px">Selecione um NCM para listar empresas relacionadas.</div>
+        </div>
+      </section>
+
       <section class="ranking">
         <h2>Municípios em destaque</h2>
         <div id="ranking"></div>
@@ -1436,6 +1495,8 @@ def write_html(payload: dict) -> None:
     const statMunicipios = document.getElementById('statMunicipios');
     const ranking = document.getElementById('ranking');
     const cnaeDetails = document.getElementById('cnaeDetails');
+    const ncmCompanyList = document.getElementById('ncmCompanyList');
+    const refreshNcmCompanies = document.getElementById('refreshNcmCompanies');
     const filterSearches = document.querySelectorAll('.filter-search');
     const clearButtons = document.querySelectorAll('.clear-filter');
     const clearAllButton = document.getElementById('clearAll');
@@ -1864,6 +1925,47 @@ def write_html(payload: dict) -> None:
         .filter(p => p.filtered > 0)
         .sort((a, b) => b.filtered - a.filtered);
     }}
+    function renderNcmCompanyList(rows, loadingMessage = null) {{
+      if (loadingMessage) {{
+        ncmCompanyList.innerHTML = `<div class="sub" style="padding:12px">${{escapeHtml(loadingMessage)}}</div>`;
+        return;
+      }}
+      ncmCompanyList.innerHTML = rows.map(company => `
+        <div class="ncm-company-row" title="${{escapeHtml(company.razao)}} - ${{escapeHtml(company.municipio)}}">
+          <div>
+            <strong>${{escapeHtml(company.razao)}}</strong>
+            <small>${{escapeHtml(company.cnpj)}} · ${{escapeHtml(company.municipio)}} - ${{escapeHtml(company.uf)}}</small>
+            <small>CNAE ${{escapeHtml(company.grupo)}} - ${{escapeHtml(company.grupoNome)}} · Divisão ${{escapeHtml(company.divisao)}}</small>
+          </div>
+          <em>${{escapeHtml(company.faturamento)}}</em>
+        </div>
+      `).join('') || '<div class="sub" style="padding:12px">Nenhuma empresa encontrada para os filtros atuais.</div>';
+    }}
+    async function updateNcmCompanyList() {{
+      const s = selected();
+      if (!s.ncmMatch.active) {{
+        renderNcmCompanyList([], 'Selecione um NCM para listar empresas relacionadas.');
+        return;
+      }}
+      const rows = visibleRows().slice(0, 8);
+      if (!rows.length) {{
+        renderNcmCompanyList([], null);
+        return;
+      }}
+      renderNcmCompanyList([], 'Carregando empresas relacionadas...');
+      const companies = [];
+      for (const point of rows) {{
+        try {{
+          const page = await loadCompanyPage(point.code, 1);
+          page
+            .filter(company => companyMatches(company, s))
+            .forEach(company => companies.push({{...company, municipio: point.name, uf: point.uf}}));
+        }} catch (error) {{
+          console.warn(error);
+        }}
+      }}
+      renderNcmCompanyList(companies.sort(compareCompaniesByRevenue).slice(0, 80));
+    }}
 
     function update() {{
       currentCounts = countsByCity();
@@ -1926,6 +2028,7 @@ def write_html(payload: dict) -> None:
       update();
     }}));
     clearAllButton.addEventListener('click', resetAllFilters);
+    refreshNcmCompanies.addEventListener('click', updateNcmCompanyList);
     closeModal.addEventListener('click', closeCompanyTable);
     companyModal.addEventListener('click', event => {{
       if (event.target === companyModal) closeCompanyTable();

@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NCM x Empresas</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --bg:#06111f; --panel:#0b1728; --ink:#e8f3ff; --muted:#8aa7c4;
+      --line:#1d3958; --blue:#3ba4ff; --cyan:#63d7ff;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--ink); }
+    .app { min-height:100vh; display:grid; grid-template-columns:minmax(380px,480px) 1fr; }
+    aside { max-height:100vh; overflow:auto; padding:24px; background:linear-gradient(180deg,#0b1728,#071321); border-right:1px solid var(--line); }
+    h1 { margin:0 0 8px; font-size:27px; line-height:1.08; }
+    .sub { color:var(--muted); font-size:14px; line-height:1.45; margin-bottom:18px; }
+    .stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+    .stat { border:1px solid var(--line); border-radius:8px; padding:12px; background:rgba(16,42,70,.72); }
+    .stat strong { display:block; color:var(--cyan); font-size:22px; line-height:1; }
+    .stat span { display:block; margin-top:6px; color:var(--muted); font-size:12px; }
+    .panel { border:1px solid var(--line); border-radius:8px; padding:14px; background:rgba(7,19,33,.72); margin-bottom:14px; }
+    label { display:block; margin:0 0 6px; color:#aac9e9; font-size:11px; font-weight:800; text-transform:uppercase; }
+    input, select { width:100%; border:1px solid #24486c; border-radius:7px; padding:10px 11px; background:#09182a; color:var(--ink); font:inherit; outline:none; }
+    select[multiple] { min-height:240px; padding:8px; }
+    select[multiple] option { padding:6px 7px; border-radius:5px; }
+    button { border:1px solid #2b6ea3; border-radius:7px; padding:8px 10px; background:rgba(59,164,255,.12); color:var(--ink); font:inherit; font-size:12px; cursor:pointer; }
+    button:hover { background:rgba(59,164,255,.22); }
+    .actions { display:flex; gap:8px; justify-content:flex-end; margin-bottom:10px; }
+    .details { border:1px solid var(--line); border-radius:8px; padding:13px; background:rgba(16,42,70,.42); margin-top:14px; }
+    .details h2, .ranking h2 { margin:0 0 9px; font-size:15px; }
+    .details p { margin:5px 0; color:var(--muted); font-size:13px; line-height:1.35; }
+    .ranking { border-top:1px solid var(--line); padding-top:14px; margin-top:16px; }
+    .rank-row { display:grid; grid-template-columns:1fr auto; gap:12px; padding:9px 0; border-bottom:1px solid rgba(138,167,196,.16); font-size:13px; }
+    .rank-row small { display:block; color:var(--muted); margin-top:2px; }
+    .rank-row strong { color:var(--cyan); }
+    #map { width:100%; min-height:100vh; background:#06111f; }
+    .leaflet-tile-pane { filter:brightness(.58) saturate(.75) hue-rotate(175deg) contrast(1.15); }
+    .leaflet-popup-content-wrapper,.leaflet-popup-tip { background:#071321; color:var(--ink); border:1px solid var(--line); }
+    .hover-tooltip { background:rgba(7,19,33,.96); color:var(--ink); border:1px solid #2b6ea3; border-radius:8px; box-shadow:0 12px 32px rgba(0,0,0,.38); padding:0; max-width:430px; }
+    .hover-tooltip::before { display:none; }
+    .tip-box { min-width:310px; max-width:420px; }
+    .tip-title { padding:10px 12px 8px; border-bottom:1px solid rgba(138,167,196,.2); font-weight:800; font-size:13px; }
+    .tip-title small { display:block; color:var(--muted); margin-top:3px; font-weight:500; }
+    .tip-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; padding:7px 12px; border-bottom:1px solid rgba(138,167,196,.12); font-size:12px; line-height:1.25; }
+    .tip-row span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#cfe8ff; }
+    .tip-row strong { color:var(--cyan); }
+    @media (max-width:920px) { .app { grid-template-columns:1fr; } aside { max-height:none; border-right:0; } #map { min-height:72vh; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside>
+      <h1>NCM x Empresas</h1>
+      <div class="sub">Selecione um ou mais códigos NCM para ver, no mapa, os municípios com empresas em CNAE grupo/divisão relacionados ao produto.</div>
+      <section class="stats">
+        <div class="stat"><strong id="statEmpresas">0</strong><span>empresas relacionadas</span></div>
+        <div class="stat"><strong id="statMunicipios">0</strong><span>municípios ativos</span></div>
+        <div class="stat"><strong>13692</strong><span>NCMs na relação</span></div>
+        <div class="stat"><strong>PR, SC, RS</strong><span>UFs na análise</span></div>
+      </section>
+      <div class="actions"><button id="clearNcm" type="button">Limpar NCM</button></div>
+      <section class="panel">
+        <label for="ncmSearch">Procurar NCM</label>
+        <input id="ncmSearch" type="search" placeholder="Digite código, produto ou descrição" />
+        <label for="ncmSelect" style="margin-top:10px">Código NCM</label>
+        <select id="ncmSelect" multiple size="12"></select>
+      </section>
+      <section class="details">
+        <h2>NCM selecionado</h2>
+        <div id="ncmDetails"><p>Selecione um ou mais NCMs para ver as relações com CNAE.</p></div>
+      </section>
+      <section class="ranking">
+        <h2>Municípios em destaque</h2>
+        <div id="ranking"></div>
+      </section>
+    </aside>
+    <div id="map"></div>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    let DATA = null;
+    async function initApp() {
+      DATA = await fetch('assets/data/ncm_payload.json').then(response => response.json());
+    const br = new Intl.NumberFormat('pt-BR');
+    const map = L.map('map', { zoomControl:false }).setView([-27.6,-51.2],6);
+    L.control.zoom({ position:'bottomright' }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18, attribution:'&copy; OpenStreetMap' }).addTo(map);
+    const ncmSelect = document.getElementById('ncmSelect');
+    const ncmSearch = document.getElementById('ncmSearch');
+    const clearNcm = document.getElementById('clearNcm');
+    const ncmDetails = document.getElementById('ncmDetails');
+    const ranking = document.getElementById('ranking');
+    const statEmpresas = document.getElementById('statEmpresas');
+    const statMunicipios = document.getElementById('statMunicipios');
+    DATA.pointsByCode = Object.fromEntries(DATA.points.map(p => [p.code,p]));
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+    }
+    function normalizeText(value) {
+      return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    }
+    ncmSelect.innerHTML = DATA.ncmOptions.map(d => `<option value="${escapeHtml(d.value)}" title="${escapeHtml(d.label)}">${escapeHtml(d.label)}</option>`).join('');
+    function selectedNcms() {
+      return Array.from(ncmSelect.selectedOptions).map(option => option.value);
+    }
+    function selectedGroups() {
+      const groups = new Map();
+      for (const ncm of selectedNcms()) {
+        for (const item of DATA.ncmMap[ncm]?.groups || []) groups.set(item.group, item);
+      }
+      return groups;
+    }
+    function colorScale(n) {
+      if (n >= 20000) return '#7dd3fc';
+      if (n >= 10000) return '#38bdf8';
+      if (n >= 5000) return '#0ea5e9';
+      if (n >= 1000) return '#2563eb';
+      if (n > 0) return '#1d4ed8';
+      return '#172338';
+    }
+    function radiusScale(n) { return Math.max(4, Math.min(30, 3 + Math.sqrt(n) / 8)); }
+    function countsByCity() {
+      const groups = selectedGroups();
+      const counts = {};
+      if (!groups.size) return counts;
+      for (const row of DATA.cityCnae) {
+        if (groups.has(row.group)) counts[row.code] = (counts[row.code] || 0) + row.n;
+      }
+      return counts;
+    }
+    function cnaeBreakdown(code) {
+      const groups = selectedGroups();
+      const rows = DATA.cityCnae
+        .filter(row => row.code === code && groups.has(row.group))
+        .sort((a,b) => b.n - a.n)
+        .slice(0, 12);
+      return rows;
+    }
+    function tooltipHtml(point, total) {
+      const rows = cnaeBreakdown(point.code);
+      const body = rows.length
+        ? rows.map(row => `<div class="tip-row" title="${escapeHtml(row.group + ' - ' + row.groupName)}"><span>${escapeHtml(row.division)} / ${escapeHtml(row.group)} - ${escapeHtml(row.groupName)}</span><strong>${br.format(row.n)}</strong></div>`).join('')
+        : '<div class="tip-row"><span>Nenhum CNAE relacionado no filtro</span><strong>0</strong></div>';
+      return `<div class="tip-box"><div class="tip-title">${escapeHtml(point.name)} - ${point.uf}<small>${br.format(total)} empresas relacionadas</small></div>${body}</div>`;
+    }
+    let currentCounts = {};
+    const polygonLayer = L.geoJSON(DATA.geojson, {
+      style: feature => ({ color:'#25415f', weight:.35, opacity:.45, fillColor:'#172338', fillOpacity:.08 }),
+      onEachFeature: (feature, layer) => {
+        layer.on('mouseover', event => {
+          const p = feature.properties;
+          const point = DATA.pointsByCode[String(p.code)] || { code:String(p.code), name:p.name, uf:p.uf };
+          layer.bindTooltip(tooltipHtml(point, currentCounts[String(p.code)] || 0), { sticky:true, direction:'top', opacity:1, className:'hover-tooltip' }).openTooltip(event.latlng);
+        });
+      }
+    }).addTo(map);
+    const pointLayer = L.layerGroup().addTo(map);
+
+    function updateDetails() {
+      const ncms = selectedNcms();
+      if (!ncms.length) {
+        ncmDetails.innerHTML = '<p>Selecione um ou mais NCMs para ver as relações com CNAE.</p>';
+        return;
+      }
+      const groups = selectedGroups();
+      const ncmText = ncms.slice(0, 8).map(code => `<p><strong>${escapeHtml(code)}:</strong> ${escapeHtml(DATA.ncmMap[code]?.name || '')}</p>`).join('');
+      ncmDetails.innerHTML = `${ncmText}<p><strong>${groups.size}</strong> grupos CNAE relacionados.</p>`;
+    }
+    function update() {
+      currentCounts = countsByCity();
+      pointLayer.clearLayers();
+      polygonLayer.setStyle(feature => {
+        const n = currentCounts[String(feature.properties.code)] || 0;
+        return { color:n ? '#48a7df' : '#25415f', weight:n ? .8 : .25, opacity:.62, fillColor:colorScale(n), fillOpacity:n ? .62 : .05 };
+      });
+      const rows = DATA.points.map(p => ({...p, filtered:currentCounts[p.code] || 0})).filter(p => p.filtered > 0).sort((a,b) => b.filtered - a.filtered);
+      let total = 0;
+      rows.forEach(p => {
+        total += p.filtered;
+        L.circleMarker([p.lat,p.lon], { radius:radiusScale(p.filtered), color:'#dff6ff', weight:1, fillColor:colorScale(p.filtered), fillOpacity:.86 })
+          .bindTooltip(tooltipHtml(p, p.filtered), { sticky:true, direction:'top', opacity:1, className:'hover-tooltip' })
+          .bindPopup(`<strong>${escapeHtml(p.name)} - ${p.uf}</strong><br>${br.format(p.filtered)} empresas relacionadas`)
+          .addTo(pointLayer);
+      });
+      statEmpresas.textContent = br.format(total);
+      statMunicipios.textContent = br.format(rows.length);
+      ranking.innerHTML = rows.slice(0,12).map(p => `<div class="rank-row"><div>${escapeHtml(p.name)}<small>${p.uf}</small></div><strong>${br.format(p.filtered)}</strong></div>`).join('') || '<div class="sub">Selecione NCM para ativar o mapa.</div>';
+      updateDetails();
+    }
+    ncmSearch.addEventListener('input', () => {
+      const term = normalizeText(ncmSearch.value.trim());
+      Array.from(ncmSelect.options).forEach(option => {
+        const text = normalizeText(`${option.textContent} ${option.value}`);
+        option.hidden = term ? !text.includes(term) : false;
+      });
+    });
+    ncmSelect.addEventListener('input', update);
+    clearNcm.addEventListener('click', () => {
+      Array.from(ncmSelect.options).forEach(option => { option.selected = false; option.hidden = false; });
+      ncmSearch.value = '';
+      update();
+    });
+    update();
+    }
+    initApp().catch(error => {
+      console.error(error);
+      document.body.innerHTML = '<main style="padding:24px;font-family:system-ui;color:#e8f3ff;background:#06111f;min-height:100vh"><h1>Erro ao carregar dados</h1><p>Verifique se os arquivos em assets/data foram publicados junto com a aplicação.</p></main>';
+    });
+  </script>
+</body>
+</html>

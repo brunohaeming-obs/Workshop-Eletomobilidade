@@ -10,7 +10,8 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "dados"
-EMPRESAS_XLSX = DATA_DIR / "empresas_rfb_databricks.xlsx"
+EMPRESAS_CSV = DATA_DIR / "empresas_rfb_2.csv"
+EMPRESAS_FATURAMENTO_XLSX = DATA_DIR / "empresas_rfb_databricks.xlsx"
 CNAE_XLSX = DATA_DIR / "CNAE subclasse - classe - grupo - divisão.xlsx"
 NCM_XLSX = DATA_DIR / "NCM_SH4 - atualizado 07.04.2026.xlsx"
 GEOJSON_CACHE = DATA_DIR / "municipios_sul_geobr_2020.geojson"
@@ -18,6 +19,8 @@ OUTPUT_HTML = ROOT / "visualizacao_empresas_rfb.html"
 OUTPUT_NCM_HTML = ROOT / "visualizacao_ncm_empresas.html"
 DETAIL_DIR = ROOT / "empresas_app_data" / "municipios"
 DIST_DIR = ROOT / "dist"
+CNPJ_INDEX_DIR = ROOT / "empresas_app_data" / "cnpj_index"
+LEGACY_CNPJ_INDEX = ROOT / "empresas_app_data" / "cnpj_index.json"
 
 UF_ORDER = ["PR", "SC", "RS"]
 NA_VALUE = "Não informado"
@@ -30,6 +33,11 @@ def normalize_code(series: pd.Series) -> pd.Series:
         .astype(str)
         .replace("<NA>", NA_VALUE)
     )
+
+
+def cnae_group_from_subclass(series: pd.Series) -> pd.Series:
+    digits = series.fillna("").astype(str).str.replace(r"\D", "", regex=True)
+    return digits.str.zfill(7).str[:3].replace({"000": NA_VALUE, "": NA_VALUE})
 
 
 def load_municipios() -> gpd.GeoDataFrame:
@@ -129,29 +137,84 @@ def load_ncm_depara() -> pd.DataFrame:
     ).copy()
 
 
+def load_faturamento_depara() -> pd.DataFrame:
+    faturamento = pd.read_excel(
+        EMPRESAS_FATURAMENTO_XLSX,
+        usecols=["nr_cnpj", "ds_faixa_faturamento_grupo"],
+    )
+    faturamento["nr_cnpj"] = (
+        faturamento["nr_cnpj"]
+        .fillna("")
+        .astype(str)
+        .str.replace(r"\D", "", regex=True)
+        .str.zfill(14)
+    )
+    faturamento["ds_faixa_faturamento_grupo"] = (
+        faturamento["ds_faixa_faturamento_grupo"]
+        .fillna(NA_VALUE)
+        .astype(str)
+        .str.strip()
+    )
+    return faturamento.drop_duplicates(subset=["nr_cnpj"])
+
+
 def load_empresas() -> pd.DataFrame:
     usecols = [
         "nr_cnpj",
-        "nm_razao_social_empresarial",
         "nm_porte_obs_Novo",
+        "nm_razao_social",
+        "cd_cnae_fiscal_principal",
+        "cd_cnae_fiscal_secundaria",
         "sg_uf",
         "cd_municipio_ibge",
-        "nm_municipio",
-        "ds_faixa_faturamento_grupo",
-        "cnae_grupo",
+        "nr_cnpj_valido",
     ]
-    df = pd.read_excel(EMPRESAS_XLSX, usecols=usecols)
+    df = pd.read_csv(
+        EMPRESAS_CSV,
+        usecols=usecols,
+        dtype={
+            "nr_cnpj": "string",
+            "nm_porte_obs_Novo": "string",
+            "nm_razao_social": "string",
+            "cd_cnae_fiscal_principal": "string",
+            "cd_cnae_fiscal_secundaria": "string",
+            "sg_uf": "string",
+            "cd_municipio_ibge": "Int64",
+            "nr_cnpj_valido": "string",
+        },
+    )
+    df = df.rename(columns={"nm_razao_social": "nm_razao_social_empresarial"})
     df = df[df["sg_uf"].isin(UF_ORDER)].copy()
+    df = df[df["nr_cnpj_valido"].fillna("") == "CNPJ válido"].copy()
     df["cd_municipio_ibge"] = pd.to_numeric(
         df["cd_municipio_ibge"], errors="coerce"
     ).astype("Int64")
     df = df.dropna(subset=["cd_municipio_ibge"])
     df["cd_municipio_ibge"] = df["cd_municipio_ibge"].astype("int64")
+    df["nr_cnpj"] = df["nr_cnpj"].fillna("").astype(str).str.replace(r"\D", "", regex=True)
+    df["nr_cnpj"] = df["nr_cnpj"].str.zfill(14)
+    df["nm_porte_obs_Novo"] = df["nm_porte_obs_Novo"].fillna(NA_VALUE).astype(str)
+    df["nm_razao_social_empresarial"] = (
+        df["nm_razao_social_empresarial"].fillna(NA_VALUE).astype(str).str.strip()
+    )
+    df["cnae_principal"] = (
+        df["cd_cnae_fiscal_principal"].fillna(NA_VALUE).astype(str).str.strip()
+    )
+    df["cnae_secundario"] = (
+        df["cd_cnae_fiscal_secundaria"].fillna(NA_VALUE).astype(str).str.strip()
+    )
+    faturamento = load_faturamento_depara()
+    df = df.merge(faturamento, on="nr_cnpj", how="left")
     df["ds_faixa_faturamento_grupo"] = (
         df["ds_faixa_faturamento_grupo"].fillna(NA_VALUE).astype(str).str.strip()
     )
-    df["nm_porte_obs_Novo"] = df["nm_porte_obs_Novo"].fillna(NA_VALUE).astype(str)
-    df["cnae_grupo"] = normalize_code(df["cnae_grupo"])
+    df["cnae_grupo"] = cnae_group_from_subclass(df["cd_cnae_fiscal_principal"])
+
+    municipios = load_municipios()[["code_muni", "name_muni"]].rename(
+        columns={"code_muni": "cd_municipio_ibge", "name_muni": "nm_municipio"}
+    )
+    df = df.merge(municipios, on="cd_municipio_ibge", how="left")
+    df["nm_municipio"] = df["nm_municipio"].fillna(NA_VALUE).astype(str)
 
     cnae = load_cnae_depara()
     df = df.merge(cnae, on="cnae_grupo", how="left")
@@ -168,12 +231,16 @@ def load_empresas() -> pd.DataFrame:
 
 
 def write_detail_files(empresas: pd.DataFrame) -> None:
+    if DETAIL_DIR.exists():
+        shutil.rmtree(DETAIL_DIR)
     DETAIL_DIR.mkdir(parents=True, exist_ok=True)
     cols = [
         "nr_cnpj",
         "nm_razao_social_empresarial",
         "nm_porte_obs_Novo",
         "ds_faixa_faturamento_grupo",
+        "cnae_principal",
+        "cnae_secundario",
         "cnae_grupo",
         "cnae_grupo_nome",
         "cnae_divisao",
@@ -186,6 +253,8 @@ def write_detail_files(empresas: pd.DataFrame) -> None:
         "nm_razao_social_empresarial": "razao",
         "nm_porte_obs_Novo": "porte",
         "ds_faixa_faturamento_grupo": "faturamento",
+        "cnae_principal": "cnaePrincipal",
+        "cnae_secundario": "cnaeSecundario",
         "cnae_grupo": "grupo",
         "cnae_grupo_nome": "grupoNome",
         "cnae_divisao": "divisao",
@@ -193,18 +262,81 @@ def write_detail_files(empresas: pd.DataFrame) -> None:
         "intensidade_grupo": "techGroup",
         "intensidade_divisao": "techDivision",
     }
+    detail_page_size = 5000
     for code, part in empresas.groupby("cd_municipio_ibge", sort=False):
-        records = part[cols].rename(columns=renamed).fillna(NA_VALUE)
+        records = part[cols].rename(columns=renamed).fillna(NA_VALUE).copy()
         records["cnpj"] = records["cnpj"].astype(str)
-        payload = {
-            "columns": list(records.columns),
-            "rows": records.values.tolist(),
+        records = records.sort_values(["faturamento", "razao"], kind="stable")
+        city_dir = DETAIL_DIR / str(int(code))
+        city_dir.mkdir(parents=True, exist_ok=True)
+        columns = list(records.columns)
+        total_rows = int(len(records))
+        total_pages = max(1, (total_rows + detail_page_size - 1) // detail_page_size)
+        manifest = {
+            "columns": columns,
+            "rows": total_rows,
+            "pageSize": detail_page_size,
+            "pages": total_pages,
         }
-        path = DETAIL_DIR / f"{int(code)}.json"
+        (city_dir / "manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8",
+        )
+        for page_idx in range(total_pages):
+            start = page_idx * detail_page_size
+            page = records.iloc[start : start + detail_page_size]
+            (city_dir / f"{page_idx + 1}.json").write_text(
+                json.dumps(
+                    {"rows": page.values.tolist()},
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ),
+                encoding="utf-8",
+            )
+
+
+def write_cnpj_index(empresas: pd.DataFrame) -> None:
+    if LEGACY_CNPJ_INDEX.exists():
+        LEGACY_CNPJ_INDEX.unlink()
+    if CNPJ_INDEX_DIR.exists():
+        shutil.rmtree(CNPJ_INDEX_DIR)
+    CNPJ_INDEX_DIR.mkdir(parents=True, exist_ok=True)
+    cols = [
+        "nr_cnpj",
+        "nm_razao_social_empresarial",
+        "cd_municipio_ibge",
+        "cnae_grupo",
+        "cnae_divisao",
+        "ds_faixa_faturamento_grupo",
+    ]
+    index = empresas[cols].drop_duplicates(subset=["nr_cnpj"]).copy()
+    index["nr_cnpj"] = index["nr_cnpj"].astype(str)
+    index["cd_municipio_ibge"] = index["cd_municipio_ibge"].astype(str)
+    index = index.rename(
+        columns={
+            "nr_cnpj": "value",
+            "nm_razao_social_empresarial": "name",
+            "cd_municipio_ibge": "code",
+            "cnae_grupo": "group",
+            "cnae_divisao": "division",
+            "ds_faixa_faturamento_grupo": "revenue",
+        }
+    )
+    index["prefix"] = index["value"].str[:4].str.zfill(4)
+    columns = [col for col in index.columns if col != "prefix"]
+    manifest = {}
+    for prefix, part in index.groupby("prefix", sort=True):
+        payload = {"columns": columns, "rows": part[columns].values.tolist()}
+        path = CNPJ_INDEX_DIR / f"{prefix}.json"
         path.write_text(
             json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
             encoding="utf-8",
         )
+        manifest[str(prefix)] = int(len(part))
+    (CNPJ_INDEX_DIR / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
 
 
 def option_list(df: pd.DataFrame, value_col: str, label_col: str | None = None) -> list[dict]:
@@ -219,6 +351,10 @@ def option_list(df: pd.DataFrame, value_col: str, label_col: str | None = None) 
         label = str(getattr(row, label_col)) if label_col else value
         out.append({"value": value, "label": label, "count": int(row.count)})
     return out
+
+
+def count_informative_revenue(empresas: pd.DataFrame) -> int:
+    return int(empresas["ds_faixa_faturamento_grupo"].ne(NA_VALUE).sum())
 
 
 def build_payload(empresas: pd.DataFrame, municipios: gpd.GeoDataFrame) -> dict:
@@ -337,8 +473,6 @@ def build_payload(empresas: pd.DataFrame, municipios: gpd.GeoDataFrame) -> dict:
             "revenue": option_list(empresas, "ds_faixa_faturamento_grupo"),
             "group": option_list(empresas, "cnae_grupo", "cnae_grupo_nome"),
             "division": option_list(empresas, "cnae_divisao", "cnae_divisao_nome"),
-            "techGroup": option_list(empresas, "intensidade_grupo"),
-            "techDivision": option_list(empresas, "intensidade_divisao"),
             "ncm": [
                 {
                     "value": str(row.ncm),
@@ -350,6 +484,7 @@ def build_payload(empresas: pd.DataFrame, municipios: gpd.GeoDataFrame) -> dict:
                 }
                 for row in ncm_options.itertuples(index=False)
             ],
+            "cnpj": [],
         },
         "ncmMap": ncm_map,
     }
@@ -798,7 +933,7 @@ def write_html(payload: dict) -> None:
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Empresas - CNAE e intensidade tecnológica</title>
+  <title>Empresas - CNAE, NCM e CNPJ</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {{
@@ -1167,7 +1302,7 @@ def write_html(payload: dict) -> None:
   <main class="app">
     <aside>
       <h1>Empresas</h1>
-      <div class="sub">Mapa municipal com filtros por CNAE, divisão e intensidade tecnológica.</div>
+      <div class="sub">Mapa municipal com filtros por CNAE, NCM, CNPJ e características das empresas.</div>
       <section class="stats">
         <div class="stat"><strong id="statEmpresas">0</strong><span>empresas no filtro</span></div>
         <div class="stat"><strong id="statMunicipios">0</strong><span>municípios ativos</span></div>
@@ -1196,6 +1331,11 @@ def write_html(payload: dict) -> None:
           <select id="ncm" multiple size="6"></select>
         </div>
         <div>
+          <div class="filter-head"><label for="cnpj">CNPJ</label><button class="clear-filter" data-target="cnpj" type="button">Limpar</button></div>
+          <div class="search-wrap"><input class="filter-search" data-target="cnpj" type="search" placeholder="Procurar CNPJ ou razão social" /></div>
+          <select id="cnpj" multiple size="6"></select>
+        </div>
+        <div>
           <div class="filter-head"><label for="division">CNAE divisão</label><button class="clear-filter" data-target="division" type="button">Limpar</button></div>
           <div class="search-wrap"><input class="filter-search" data-target="division" type="search" placeholder="Procurar número ou nome" /></div>
           <select id="division" multiple size="6"></select>
@@ -1204,16 +1344,6 @@ def write_html(payload: dict) -> None:
           <div class="filter-head"><label for="group">CNAE grupo</label><button class="clear-filter" data-target="group" type="button">Limpar</button></div>
           <div class="search-wrap"><input class="filter-search" data-target="group" type="search" placeholder="Procurar número ou nome" /></div>
           <select id="group" multiple size="6"></select>
-        </div>
-        <div>
-          <div class="filter-head"><label for="techDivision">Intensidade tecnológica da divisão</label><button class="clear-filter" data-target="techDivision" type="button">Limpar</button></div>
-          <div class="search-wrap"><input class="filter-search" data-target="techDivision" type="search" placeholder="Procurar intensidade" /></div>
-          <select id="techDivision" multiple size="5"></select>
-        </div>
-        <div>
-          <div class="filter-head"><label for="techGroup">Intensidade tecnológica do grupo</label><button class="clear-filter" data-target="techGroup" type="button">Limpar</button></div>
-          <div class="search-wrap"><input class="filter-search" data-target="techGroup" type="search" placeholder="Procurar intensidade" /></div>
-          <select id="techGroup" multiple size="5"></select>
         </div>
         <div>
           <div class="filter-head"><label for="revenue">Faixa de faturamento</label><button class="clear-filter" data-target="revenue" type="button">Limpar</button></div>
@@ -1260,6 +1390,8 @@ def write_html(payload: dict) -> None:
               <th class="col-razao">Razão social</th>
               <th>Faturamento</th>
               <th>Porte</th>
+              <th>CNAE principal</th>
+              <th>CNAE secundário</th>
               <th class="col-cnae">CNAE grupo</th>
               <th class="col-cnae">CNAE divisão</th>
               <th>Intensidade grupo</th>
@@ -1295,10 +1427,9 @@ def write_html(payload: dict) -> None:
       uf: document.getElementById('uf'),
       revenue: document.getElementById('revenue'),
       ncm: document.getElementById('ncm'),
+      cnpj: document.getElementById('cnpj'),
       group: document.getElementById('group'),
       division: document.getElementById('division'),
-      techGroup: document.getElementById('techGroup'),
-      techDivision: document.getElementById('techDivision'),
       search: document.getElementById('search')
     }};
     const statEmpresas = document.getElementById('statEmpresas');
@@ -1320,10 +1451,11 @@ def write_html(payload: dict) -> None:
     const prevPage = document.getElementById('prevPage');
     const nextPage = document.getElementById('nextPage');
     const detailCache = {{}};
+    const cnpjShardCache = {{}};
     let activeCompanies = [];
+    let activeCompanyManifest = null;
     let activePoint = null;
     let currentPage = 1;
-    const pageSize = 80;
 
     function escapeHtml(value) {{
       return String(value).replace(/[&<>"']/g, s => ({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}}[s]));
@@ -1337,13 +1469,13 @@ def write_html(payload: dict) -> None:
     }}
     fillSelect(els.revenue, DATA.options.revenue, 'Todas as faixas');
     fillSelect(els.ncm, DATA.options.ncm, 'Todos os NCMs', d => d.label);
+    fillSelect(els.cnpj, DATA.options.cnpj, 'Todos os CNPJs', d => d.label);
     fillSelect(els.group, DATA.options.group, 'Todos os grupos', d => `${{d.value}} - ${{d.label}}`);
     fillSelect(els.division, DATA.options.division, 'Todas as divisões', d => `${{d.value}} - ${{d.label}}`);
-    fillSelect(els.techGroup, DATA.options.techGroup, 'Todas as intensidades');
-    fillSelect(els.techDivision, DATA.options.techDivision, 'Todas as intensidades');
     Object.values(els).forEach(el => {{
       if (el.tagName === 'SELECT') el.querySelector('option[value="all"]')?.setAttribute('selected', 'selected');
     }});
+    DATA.cnpjIndex = {{}};
     Array.from(els.uf.options).forEach(option => {{
       option.title = option.textContent;
     }});
@@ -1362,6 +1494,54 @@ def write_html(payload: dict) -> None:
         option.hidden = term && option.value !== 'all' ? !text.includes(term) : false;
       }});
     }}
+    async function loadCnpjShard(prefix) {{
+      if (cnpjShardCache[prefix]) return cnpjShardCache[prefix];
+      const response = await fetch(`empresas_app_data/cnpj_index/${{prefix}}.json`);
+      if (!response.ok) {{
+        cnpjShardCache[prefix] = [];
+        return cnpjShardCache[prefix];
+      }}
+      const payload = await response.json();
+      cnpjShardCache[prefix] = payload.rows.map(row => Object.fromEntries(payload.columns.map((column, index) => [column, row[index]])));
+      return cnpjShardCache[prefix];
+    }}
+    async function updateCnpjOptions(input) {{
+      const raw = input.value.trim();
+      const digits = raw.replace(/\\D/g, '');
+      const term = normalizeText(raw);
+      if (digits.length < 4 && term.length < 3) {{
+        DATA.options.cnpj = [];
+        fillSelect(els.cnpj, DATA.options.cnpj, 'Digite ao menos 4 dígitos do CNPJ');
+        DATA.cnpjIndex = {{}};
+        return;
+      }}
+      let items = [];
+      if (digits.length >= 4) {{
+        const prefixes = Array.from(new Set([digits.slice(0, 4), digits.padStart(14, '0').slice(0, 4)]));
+        const chunks = await Promise.all(prefixes.map(loadCnpjShard));
+        items = chunks.flat();
+      }} else {{
+        const manifest = await fetch('empresas_app_data/cnpj_index/manifest.json').then(response => response.json());
+        const prefixes = Object.keys(manifest).slice(0, 20);
+        const chunks = await Promise.all(prefixes.map(loadCnpjShard));
+        items = chunks.flat();
+      }}
+      const filtered = items
+        .filter(item => normalizeText(`${{item.value}} ${{item.name}}`).includes(term))
+        .slice(0, 500);
+      DATA.options.cnpj = filtered.map(item => ({{
+        value: String(item.value),
+        label: `${{item.value}} - ${{item.name}}`,
+        code: item.code,
+        group: item.group,
+        division: item.division,
+        revenue: item.revenue,
+        count: 0
+      }}));
+      DATA.cnpjIndex = Object.fromEntries(DATA.options.cnpj.map(item => [String(item.value), item]));
+      fillSelect(els.cnpj, DATA.options.cnpj, filtered.length ? 'Todos os CNPJs encontrados' : 'Nenhum CNPJ encontrado', d => d.label);
+      resetSelect('cnpj');
+    }}
     function resetSelect(key) {{
       const select = els[key];
       Array.from(select.options).forEach(option => {{
@@ -1372,7 +1552,7 @@ def write_html(payload: dict) -> None:
       if (search) search.value = '';
     }}
     function resetAllFilters() {{
-      ['uf', 'revenue', 'ncm', 'group', 'division', 'techGroup', 'techDivision'].forEach(resetSelect);
+      ['uf', 'revenue', 'ncm', 'cnpj', 'group', 'division'].forEach(resetSelect);
       els.search.value = '';
       update();
     }}
@@ -1411,34 +1591,47 @@ def write_html(payload: dict) -> None:
       }}
       return {{ active: true, groups, divisions }};
     }}
+    function selectedCnpjs(cnpjs) {{
+      const selected = new Set(cnpjs.filter(value => value !== 'all'));
+      return {{ active: selected.size > 0, selected }};
+    }}
     function selected() {{
       const ncm = valuesOf(els.ncm);
+      const cnpj = valuesOf(els.cnpj);
       return {{
         revenue: valuesOf(els.revenue),
         ncm,
         ncmMatch: selectedNcmGroups(ncm),
+        cnpj,
+        cnpjMatch: selectedCnpjs(cnpj),
         group: valuesOf(els.group),
         division: valuesOf(els.division),
-        techGroup: valuesOf(els.techGroup),
-        techDivision: valuesOf(els.techDivision),
         uf: valuesOf(els.uf)
       }};
     }}
     function recordMatches(r, s) {{
+      if (s.cnpjMatch.active) {{
+        let match = false;
+        for (const cnpj of s.cnpjMatch.selected) {{
+          const company = DATA.cnpjIndex[cnpj];
+          if (company && company.code === r.code && company.group === r.group && company.division === r.division && company.revenue === r.revenue) {{
+            match = true;
+            break;
+          }}
+        }}
+        if (!match) return false;
+      }}
       return matchesSelection(r.revenue, s.revenue)
         && (!s.ncmMatch.active || s.ncmMatch.groups.has(r.group))
         && matchesSelection(r.group, s.group)
-        && matchesSelection(r.division, s.division)
-        && matchesSelection(r.techGroup, s.techGroup)
-        && matchesSelection(r.techDivision, s.techDivision);
+        && matchesSelection(r.division, s.division);
     }}
     function companyMatches(company, s) {{
       return matchesSelection(company.faturamento, s.revenue)
         && (!s.ncmMatch.active || s.ncmMatch.groups.has(company.grupo))
+        && (!s.cnpjMatch.active || s.cnpjMatch.selected.has(String(company.cnpj)))
         && matchesSelection(company.grupo, s.group)
-        && matchesSelection(company.divisao, s.division)
-        && matchesSelection(company.techGroup, s.techGroup)
-        && matchesSelection(company.techDivision, s.techDivision);
+        && matchesSelection(company.divisao, s.division);
     }}
     function revenueRank(value) {{
       const label = normalizeText(value);
@@ -1468,6 +1661,8 @@ def write_html(payload: dict) -> None:
             company.razao,
             company.faturamento,
             company.porte,
+            company.cnaePrincipal,
+            company.cnaeSecundario,
             company.grupo,
             company.grupoNome,
             company.divisao,
@@ -1481,62 +1676,75 @@ def write_html(payload: dict) -> None:
     }}
     function renderCompanyTable() {{
       const rows = filteredCompanies();
-      const pages = Math.max(1, Math.ceil(rows.length / pageSize));
-      currentPage = Math.min(Math.max(1, currentPage), pages);
-      const start = (currentPage - 1) * pageSize;
-      const pageRows = rows.slice(start, start + pageSize);
-      companyRows.innerHTML = pageRows.map(company => `
+      const pages = activeCompanyManifest?.pages || 1;
+      companyRows.innerHTML = rows.map(company => `
         <tr>
           <td>${{escapeHtml(company.cnpj)}}</td>
           <td class="col-razao">${{escapeHtml(company.razao)}}</td>
           <td>${{escapeHtml(company.faturamento)}}</td>
           <td>${{escapeHtml(company.porte)}}</td>
+          <td>${{escapeHtml(company.cnaePrincipal)}}</td>
+          <td>${{escapeHtml(company.cnaeSecundario)}}</td>
           <td class="col-cnae">${{escapeHtml(company.grupo)}} - ${{escapeHtml(company.grupoNome)}}</td>
           <td class="col-cnae">${{escapeHtml(company.divisao)}} - ${{escapeHtml(company.divisaoNome)}}</td>
           <td>${{escapeHtml(company.techGroup)}}</td>
           <td>${{escapeHtml(company.techDivision)}}</td>
         </tr>
-      `).join('') || '<tr><td colspan="8">Nenhuma empresa encontrada para os filtros atuais.</td></tr>';
-      companyStatus.textContent = `${{br.format(rows.length)}} empresas encontradas`;
+      `).join('') || '<tr><td colspan="10">Nenhuma empresa encontrada para os filtros atuais.</td></tr>';
+      const totalRows = activeCompanyManifest?.rows || rows.length;
+      companyStatus.textContent = `${{br.format(rows.length)}} empresas exibidas nesta página de ${{br.format(totalRows)}} no município`;
       pageInfo.textContent = `Página ${{currentPage}} de ${{pages}}`;
       prevPage.disabled = currentPage <= 1;
       nextPage.disabled = currentPage >= pages;
     }}
-    async function loadCompanies(code) {{
-      if (!detailCache[code]) {{
-        const response = await fetch(`empresas_app_data/municipios/${{code}}.json`);
+    async function loadCompanyManifest(code) {{
+      const key = `${{code}}/manifest`;
+      if (!detailCache[key]) {{
+        const response = await fetch(`empresas_app_data/municipios/${{code}}/manifest.json`);
         if (!response.ok) throw new Error('Não foi possível carregar os detalhes do município.');
-        const payload = await response.json();
-        detailCache[code] = Array.isArray(payload)
-          ? payload
-          : payload.rows.map(row => Object.fromEntries(payload.columns.map((column, index) => [column, row[index]])));
+        detailCache[key] = await response.json();
       }}
-      return detailCache[code];
+      return detailCache[key];
+    }}
+    async function loadCompanyPage(code, page) {{
+      const manifest = await loadCompanyManifest(code);
+      const safePage = Math.min(Math.max(1, page), manifest.pages);
+      const key = `${{code}}/${{safePage}}`;
+      if (!detailCache[key]) {{
+        const response = await fetch(`empresas_app_data/municipios/${{code}}/${{safePage}}.json`);
+        if (!response.ok) throw new Error('Não foi possível carregar a página de empresas do município.');
+        const payload = await response.json();
+        detailCache[key] = payload.rows.map(row => Object.fromEntries(manifest.columns.map((column, index) => [column, row[index]])));
+      }}
+      activeCompanyManifest = manifest;
+      currentPage = safePage;
+      return detailCache[key];
     }}
     async function openCompanyTable(point) {{
       activePoint = point;
       modalTitle.textContent = `${{point.name}} - ${{point.uf}}`;
       modalSubtitle.textContent = 'Carregando empresas do município...';
-      companyRows.innerHTML = '<tr><td colspan="8">Carregando...</td></tr>';
+      companyRows.innerHTML = '<tr><td colspan="10">Carregando...</td></tr>';
       companyStatus.textContent = '';
       companySearch.value = '';
       currentPage = 1;
       companyModal.classList.add('open');
       companyModal.setAttribute('aria-hidden', 'false');
       try {{
-        activeCompanies = await loadCompanies(point.code);
-        modalSubtitle.textContent = 'Tabela filtrada pela seleção atual do painel.';
+        activeCompanies = await loadCompanyPage(point.code, 1);
+        modalSubtitle.textContent = 'Tabela paginada por município. A busca atua sobre a página carregada.';
         renderCompanyTable();
       }} catch (error) {{
         activeCompanies = [];
         modalSubtitle.textContent = 'Abra a aplicação com um servidor local para carregar esta tabela.';
-        companyRows.innerHTML = `<tr><td colspan="8">${{escapeHtml(error.message)}} Use: python -m http.server 8000</td></tr>`;
+        companyRows.innerHTML = `<tr><td colspan="10">${{escapeHtml(error.message)}} Use: python -m http.server 8000</td></tr>`;
       }}
     }}
     function closeCompanyTable() {{
       companyModal.classList.remove('open');
       companyModal.setAttribute('aria-hidden', 'true');
       activeCompanies = [];
+      activeCompanyManifest = null;
       activePoint = null;
     }}
     function groupBreakdown(code) {{
@@ -1566,6 +1774,21 @@ def write_html(payload: dict) -> None:
     function countsByCity() {{
       const s = selected();
       const counts = {{}};
+      if (s.cnpjMatch.active) {{
+        for (const cnpj of s.cnpjMatch.selected) {{
+          const company = DATA.cnpjIndex[cnpj];
+          if (
+            company
+            && matchesSelection(company.revenue, s.revenue)
+            && (!s.ncmMatch.active || s.ncmMatch.groups.has(company.group))
+            && matchesSelection(company.group, s.group)
+            && matchesSelection(company.division, s.division)
+          ) {{
+            counts[company.code] = (counts[company.code] || 0) + 1;
+          }}
+        }}
+        return counts;
+      }}
       for (const r of DATA.records) {{
         if (recordMatches(r, s)) counts[r.code] = (counts[r.code] || 0) + r.n;
       }}
@@ -1691,7 +1914,13 @@ def write_html(payload: dict) -> None:
     }}
 
     Object.values(els).forEach(el => el.addEventListener('input', update));
-    filterSearches.forEach(input => input.addEventListener('input', () => filterSelectOptions(input)));
+    filterSearches.forEach(input => input.addEventListener('input', async () => {{
+      if (input.dataset.target === 'cnpj') {{
+        await updateCnpjOptions(input);
+      }} else {{
+        filterSelectOptions(input);
+      }}
+    }}));
     clearButtons.forEach(button => button.addEventListener('click', () => {{
       resetSelect(button.dataset.target);
       update();
@@ -1710,12 +1939,14 @@ def write_html(payload: dict) -> None:
       currentPage = 1;
       renderCompanyTable();
     }});
-    prevPage.addEventListener('click', () => {{
+    prevPage.addEventListener('click', async () => {{
       currentPage -= 1;
+      if (activePoint) activeCompanies = await loadCompanyPage(activePoint.code, currentPage);
       renderCompanyTable();
     }});
-    nextPage.addEventListener('click', () => {{
+    nextPage.addEventListener('click', async () => {{
       currentPage += 1;
+      if (activePoint) activeCompanies = await loadCompanyPage(activePoint.code, currentPage);
       renderCompanyTable();
     }});
     update();
@@ -1737,6 +1968,7 @@ def main() -> None:
     print("Lendo planilha de empresas e de-para CNAE...")
     empresas = load_empresas()
     print(f"Empresas carregadas: {len(empresas):,}")
+    print(f"Com faturamento informado: {count_informative_revenue(empresas):,}")
     print(f"Sem de-para CNAE: {(empresas['cnae_grupo_nome'] == NA_VALUE).sum():,}")
     print("Carregando malha municipal...")
     municipios = load_municipios()
@@ -1744,6 +1976,8 @@ def main() -> None:
     payload = build_payload(empresas, municipios)
     print("Gerando arquivos detalhados por município...")
     write_detail_files(empresas)
+    print("Gerando índice de CNPJ...")
+    write_cnpj_index(empresas)
     print("Gerando HTML...")
     write_html(payload)
     print("Gerando visualização NCM x Empresas...")

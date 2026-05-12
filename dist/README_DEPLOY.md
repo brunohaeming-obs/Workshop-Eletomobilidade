@@ -26,5 +26,7 @@ Arquivos principais:
 
 - `index.html`: visualizacao principal Empresas com filtro NCM integrado.
 - `ncm.html`: visualizacao auxiliar NCM x Empresas.
+- `componentes.html`: visualizacao da cadeia de componentes e maturidade por patentes.
 - `assets/data/*.json`: payloads agregados carregados pela aplicacao.
 - `empresas_app_data/municipios/*.json`: detalhes por municipio carregados sob demanda.
+- `empresas_app_data/componentes/*.json`: empresas relacionadas a cada componente.

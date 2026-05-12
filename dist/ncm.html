@@ -25,9 +25,9 @@
     input, select { width:100%; border:1px solid #24486c; border-radius:7px; padding:10px 11px; background:#09182a; color:var(--ink); font:inherit; outline:none; }
     select[multiple] { min-height:240px; padding:8px; }
     select[multiple] option { padding:6px 7px; border-radius:5px; }
-    button { border:1px solid #2b6ea3; border-radius:7px; padding:8px 10px; background:rgba(59,164,255,.12); color:var(--ink); font:inherit; font-size:12px; cursor:pointer; }
-    button:hover { background:rgba(59,164,255,.22); }
-    .actions { display:flex; gap:8px; justify-content:flex-end; margin-bottom:10px; }
+    .actions a, button { border:1px solid #2b6ea3; border-radius:7px; padding:8px 10px; background:rgba(59,164,255,.12); color:var(--ink); font:inherit; font-size:12px; cursor:pointer; text-decoration:none; }
+    .actions a:hover, button:hover { background:rgba(59,164,255,.22); }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-bottom:10px; }
     .details { border:1px solid var(--line); border-radius:8px; padding:13px; background:rgba(16,42,70,.42); margin-top:14px; }
     .details h2, .ranking h2 { margin:0 0 9px; font-size:15px; }
     .details p { margin:5px 0; color:var(--muted); font-size:13px; line-height:1.35; }
@@ -60,7 +60,7 @@
         <div class="stat"><strong>13692</strong><span>NCMs na relação</span></div>
         <div class="stat"><strong>PR, SC, RS</strong><span>UFs na análise</span></div>
       </section>
-      <div class="actions"><button id="clearNcm" type="button">Limpar NCM</button></div>
+      <div class="actions"><a href="index.html">Empresas</a><a href="componentes.html">Componentes</a><button id="clearNcm" type="button">Limpar NCM</button></div>
       <section class="panel">
         <label for="ncmSearch">Procurar NCM</label>
         <input id="ncmSearch" type="search" placeholder="Digite código, produto ou descrição" />

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cadeia de Componentes</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root { --bg:#06111f; --panel:#0b1728; --ink:#e8f3ff; --muted:#8aa7c4; --line:#1d3958; --blue:#3ba4ff; --green:#5ee48a; --cyan:#63d7ff; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--ink); }
+    .app { min-height:100vh; display:grid; grid-template-columns:minmax(390px,500px) 1fr; }
+    aside { max-height:100vh; overflow:auto; padding:24px; background:linear-gradient(180deg,#0b1728,#071321); border-right:1px solid var(--line); }
+    h1 { margin:0 0 8px; font-size:27px; line-height:1.08; }
+    h2 { margin:0 0 9px; font-size:15px; }
+    .sub { color:var(--muted); font-size:14px; line-height:1.45; margin-bottom:18px; }
+    .nav { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; }
+    .nav a, button { border:1px solid #2b6ea3; border-radius:7px; padding:8px 10px; background:rgba(59,164,255,.12); color:var(--ink); font:inherit; font-size:12px; cursor:pointer; text-decoration:none; }
+    .nav a:hover, button:hover { background:rgba(59,164,255,.22); }
+    .stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+    .stat { border:1px solid var(--line); border-radius:8px; padding:12px; background:rgba(16,42,70,.72); }
+    .stat strong { display:block; color:var(--cyan); font-size:22px; line-height:1; }
+    .stat span { display:block; margin-top:6px; color:var(--muted); font-size:12px; }
+    .panel { border:1px solid var(--line); border-radius:8px; padding:14px; background:rgba(7,19,33,.72); margin-bottom:14px; }
+    label { display:block; margin:0 0 6px; color:#aac9e9; font-size:11px; font-weight:800; text-transform:uppercase; }
+    input, select { width:100%; border:1px solid #24486c; border-radius:7px; padding:10px 11px; background:#09182a; color:var(--ink); font:inherit; outline:none; }
+    select { min-height:220px; padding:8px; }
+    option { padding:6px 7px; border-radius:5px; }
+    .toggle { display:flex; align-items:center; gap:8px; margin-top:10px; color:var(--muted); font-size:13px; }
+    .toggle input { width:auto; }
+    .details, .companies, .ranking { border:1px solid var(--line); border-radius:8px; padding:13px; background:rgba(16,42,70,.42); margin-top:14px; }
+    .details p { margin:5px 0; color:var(--muted); font-size:13px; line-height:1.35; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+    .chip { border:1px solid rgba(99,215,255,.32); border-radius:999px; padding:4px 7px; color:#cfe8ff; font-size:12px; }
+    .company-row, .rank-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; padding:9px 0; border-bottom:1px solid rgba(138,167,196,.16); font-size:13px; }
+    .company-row small, .rank-row small { display:block; color:var(--muted); margin-top:2px; }
+    .company-row strong, .rank-row strong { color:var(--cyan); }
+    .company-row.patented strong:last-child { color:var(--green); }
+    #map { width:100%; min-height:100vh; background:#06111f; }
+    .leaflet-tile-pane { filter:brightness(.58) saturate(.75) hue-rotate(175deg) contrast(1.15); }
+    .leaflet-popup-content-wrapper,.leaflet-popup-tip { background:#071321; color:var(--ink); border:1px solid var(--line); }
+    @media (max-width:920px) { .app { grid-template-columns:1fr; } aside { max-height:none; border-right:0; } #map { min-height:72vh; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside>
+      <h1>Cadeia de Componentes</h1>
+      <div class="sub">Empresas relacionadas a componentes de eletromobilidade, com maturidade tecnológica aproximada por depósitos INPI vinculados ao CNPJ.</div>
+      <nav class="nav"><a href="index.html">Empresas</a><a href="ncm.html">NCM x Empresas</a><a href="componentes.html">Componentes</a></nav>
+      <section class="stats">
+        <div class="stat"><strong id="statEmpresas">0</strong><span>empresas relacionadas</span></div>
+        <div class="stat"><strong id="statPatentes">0</strong><span>empresas com patentes</span></div>
+        <div class="stat"><strong>132</strong><span>componentes</span></div>
+        <div class="stat"><strong>66.7%</strong><span>cobertura NCM</span></div>
+      </section>
+      <section class="panel">
+        <label for="componentSearch">Procurar componente</label>
+        <input id="componentSearch" type="search" placeholder="Digite bateria, motor, inversor, NCM ou subsistema" />
+        <label for="componentSelect" style="margin-top:10px">Componente</label>
+        <select id="componentSelect" size="10"></select>
+        <label class="toggle"><input id="patentOnly" type="checkbox" /> Mostrar empresas com patentes na lista</label>
+      </section>
+      <section class="details">
+        <h2>Componente selecionado</h2>
+        <div id="componentDetails"><p>Selecione um componente para ver NCMs, CNAEs e indicadores.</p></div>
+      </section>
+      <section class="companies">
+        <h2>Empresas</h2>
+        <div id="companyList"><p class="sub">Selecione um componente para listar empresas relacionadas.</p></div>
+      </section>
+      <section class="ranking">
+        <h2>MunicÃ­pios em destaque</h2>
+        <div id="ranking"></div>
+      </section>
+    </aside>
+    <div id="map"></div>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    let DATA = null;
+    async function initApp() {
+      DATA = await fetch('assets/data/componentes_payload.json').then(response => response.json());
+    const br = new Intl.NumberFormat('pt-BR');
+    const map = L.map('map', { zoomControl:false }).setView([-27.6,-51.2],6);
+    L.control.zoom({ position:'bottomright' }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18, attribution:'&copy; OpenStreetMap' }).addTo(map);
+    const componentSelect = document.getElementById('componentSelect');
+    const componentSearch = document.getElementById('componentSearch');
+    const patentOnly = document.getElementById('patentOnly');
+    const componentDetails = document.getElementById('componentDetails');
+    const companyList = document.getElementById('companyList');
+    const ranking = document.getElementById('ranking');
+    const statEmpresas = document.getElementById('statEmpresas');
+    const statPatentes = document.getElementById('statPatentes');
+    const componentsById = Object.fromEntries(DATA.components.map(item => [item.id, item]));
+    const pointsByCode = Object.fromEntries(DATA.points.map(point => [point.code, point]));
+    const detailCache = {};
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    }
+    function normalizeText(value) {
+      return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+    function fillComponents() {
+      componentSelect.innerHTML = DATA.components.map(item => `<option value="${escapeHtml(item.id)}" title="${escapeHtml(item.name)}">${escapeHtml(item.name)} · ${escapeHtml(item.subsystem)} (${br.format(item.companies)})</option>`).join('');
+      if (componentSelect.options.length) componentSelect.options[0].selected = true;
+    }
+    function selectedComponent() {
+      return componentsById[componentSelect.value] || DATA.components[0];
+    }
+    function cityRows(componentId) {
+      return DATA.cityComponents.filter(row => row.component === componentId);
+    }
+    function color(value, max) {
+      if (!value) return '#17304d';
+      const t = Math.min(1, value / Math.max(1, max));
+      return `rgb(${28 + Math.round(26*t)}, ${104 + Math.round(112*t)}, ${100 + Math.round(55*t)})`;
+    }
+    const polygonLayer = L.geoJSON(DATA.geojson, {
+      style: () => ({ color:'#24486c', weight:.7, fillColor:'#102a46', fillOpacity:.45 }),
+      onEachFeature: (feature, layer) => {
+        layer.on('click', () => {
+          const code = String(feature.properties.code);
+          const row = currentByCity[code];
+          const point = pointsByCode[code] || feature.properties;
+          layer.bindPopup(`<strong>${escapeHtml(point.name || feature.properties.name)}</strong><br>${row ? br.format(row.n) : 0} empresas<br>${row ? br.format(row.patented) : 0} com patentes`).openPopup();
+        });
+      }
+    }).addTo(map);
+    let currentByCity = {};
+    function updateMap(rows) {
+      currentByCity = Object.fromEntries(rows.map(row => [row.code, row]));
+      const max = Math.max(1, ...rows.map(row => row.n));
+      polygonLayer.eachLayer(layer => {
+        const code = String(layer.feature.properties.code);
+        const row = currentByCity[code];
+        layer.setStyle({ fillColor: color(row?.n || 0, max), fillOpacity: row ? .78 : .22, weight: row ? 1 : .5 });
+      });
+    }
+    function renderDetails(component) {
+      const ipc = component.topIpc.length ? component.topIpc.map(item => `<span class="chip">${escapeHtml(item.code)} · ${br.format(item.count)}</span>`).join('') : '<span class="chip">Sem IPC vinculado</span>';
+      const ncms = component.ncms.slice(0, 8).map(item => `<span class="chip">${escapeHtml(item.code)}</span>`).join('');
+      componentDetails.innerHTML = `
+        <p><strong>${escapeHtml(component.gt)}</strong></p>
+        <p>${escapeHtml(component.subsystem)}</p>
+        <p>${br.format(component.ncmCount)} NCMs · ${br.format(component.cnaeCount)} grupos CNAE · ${br.format(component.patents)} depósitos INPI nas empresas relacionadas.</p>
+        <div class="chips">${ncms}</div>
+        <div class="chips">${ipc}</div>
+      `;
+    }
+    async function loadCompanies(componentId) {
+      if (!detailCache[componentId]) {
+        const manifest = await fetch(`empresas_app_data/componentes/${componentId}/manifest.json`).then(response => response.json());
+        const page = await fetch(`empresas_app_data/componentes/${componentId}/1.json`).then(response => response.json());
+        detailCache[componentId] = { manifest, rows: page.rows.map(row => Object.fromEntries(manifest.columns.map((column, index) => [column, row[index]]))) };
+      }
+      return detailCache[componentId];
+    }
+    async function renderCompanies(component) {
+      companyList.innerHTML = '<p class="sub">Carregando empresas...</p>';
+      const payload = await loadCompanies(component.id);
+      let rows = payload.rows;
+      if (patentOnly.checked) rows = rows.filter(row => Number(row.patentes || 0) > 0);
+      rows = rows.slice(0, 80);
+      companyList.innerHTML = rows.length ? rows.map(row => `
+        <div class="company-row ${Number(row.patentes || 0) > 0 ? 'patented' : ''}">
+          <div><strong>${escapeHtml(row.razao)}</strong><small>${escapeHtml(row.cnpj)} · ${escapeHtml(row.municipio)} - ${escapeHtml(row.uf)}</small><small>CNAE ${escapeHtml(row.grupo)} · ${escapeHtml(row.grupoNome)}</small></div>
+          <strong>${br.format(Number(row.patentes || 0))}</strong>
+        </div>
+      `).join('') : '<p class="sub">Nenhuma empresa para o filtro atual.</p>';
+    }
+    function renderRanking(rows) {
+      ranking.innerHTML = rows.slice().sort((a,b) => b.n - a.n).slice(0, 10).map(row => {
+        const point = pointsByCode[row.code] || {};
+        return `<div class="rank-row"><span>${escapeHtml(point.name || row.code)}<small>${br.format(row.patented)} empresas com patentes</small></span><strong>${br.format(row.n)}</strong></div>`;
+      }).join('') || '<p class="sub">Sem municÃ­pios relacionados.</p>';
+    }
+    async function update() {
+      const component = selectedComponent();
+      if (!component) return;
+      const rows = cityRows(component.id);
+      statEmpresas.textContent = br.format(component.companies);
+      statPatentes.textContent = br.format(component.patentedCompanies);
+      renderDetails(component);
+      renderRanking(rows);
+      updateMap(rows);
+      await renderCompanies(component);
+    }
+    componentSearch.addEventListener('input', () => {
+      const term = normalizeText(componentSearch.value);
+      Array.from(componentSelect.options).forEach(option => {
+        const component = componentsById[option.value];
+        option.hidden = term && !normalizeText(`${component.name} ${component.subsystem} ${component.gt} ${component.ncms.map(item => item.code).join(' ')}`).includes(term);
+      });
+    });
+    componentSelect.addEventListener('input', update);
+    patentOnly.addEventListener('change', update);
+    fillComponents();
+    update();
+    }
+    initApp().catch(error => {
+      console.error(error);
+      document.body.innerHTML = '<main style="padding:24px;font-family:system-ui;color:#e8f3ff;background:#06111f;min-height:100vh"><h1>Erro ao carregar dados</h1><p>Verifique se os arquivos em assets/data foram publicados junto com a aplicação.</p></main>';
+    });
+  </script>
+</body>
+</html>

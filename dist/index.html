@@ -87,9 +87,11 @@
     .top-actions {
       margin-bottom: 12px;
       display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
       justify-content: flex-end;
     }
-    button {
+    .top-actions a, button {
       border: 1px solid #2b6ea3;
       border-radius: 7px;
       padding: 8px 10px;
@@ -98,8 +100,9 @@
       font: inherit;
       font-size: 12px;
       cursor: pointer;
+      text-decoration: none;
     }
-    button:hover {
+    .top-actions a:hover, button:hover {
       background: rgba(59, 164, 255, .22);
       border-color: var(--blue);
     }
@@ -430,6 +433,8 @@
       </section>
 
       <div class="top-actions">
+        <a href="ncm.html">NCM x Empresas</a>
+        <a href="componentes.html">Componentes</a>
         <button id="clearAll" type="button">Limpar todos os filtros</button>
       </div>
 

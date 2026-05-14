@@ -426,9 +426,9 @@
       <h1>Empresas</h1>
       <div class="sub">Mapa municipal com filtros por CNAE, NCM, CNPJ e características das empresas.</div>
       <section class="stats">
-        <div class="stat"><strong id="statEmpresas">0</strong><span>empresas no filtro</span></div>
+        <div class="stat"><strong id="statEmpresas">0</strong><span>CNPJs no filtro</span></div>
         <div class="stat"><strong id="statMunicipios">0</strong><span>municípios ativos</span></div>
-        <div class="stat"><strong>2.927.502</strong><span>CNPJs únicos</span></div>
+        <div class="stat"><strong>13.692</strong><span>NCMs na relação</span></div>
         <div class="stat"><strong>PR, SC, RS</strong><span>UFs na análise</span></div>
       </section>
 
@@ -487,11 +487,11 @@
 
       <section class="ncm-company-panel">
         <div class="ncm-company-head">
-          <h2>Empresas relacionadas ao NCM</h2>
+          <h2>CNPJs relacionados ao NCM</h2>
           <button id="refreshNcmCompanies" type="button">Atualizar</button>
         </div>
         <div id="ncmCompanyList" class="ncm-company-body">
-          <div class="sub" style="padding:12px">Selecione um NCM para listar empresas relacionadas.</div>
+          <div class="sub" style="padding:12px">Selecione um NCM para listar CNPJs relacionados.</div>
         </div>
       </section>
 
@@ -550,7 +550,7 @@
   <script>
     let DATA = null;
     async function initApp() {
-      DATA = await fetch('assets/data/empresas_payload.json').then(response => response.json());
+      DATA = await fetch('assets/data/empresas_payload.json?v=' + Date.now(), { cache: 'no-store' }).then(response => response.json());
     const br = new Intl.NumberFormat('pt-BR');
     const map = L.map('map', { zoomControl: false }).setView([-27.6, -51.2], 6);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -907,7 +907,7 @@
       const body = rows.length
         ? rows.map(row => `<div class="tip-row" title="${escapeHtml(row.group + ' - ' + row.label)}"><span>${escapeHtml(row.group)} - ${escapeHtml(row.label)}</span><strong>${br.format(row.n)}</strong></div>`).join('')
         : '<div class="tip-row"><span>Nenhum CNAE no filtro</span><strong>0</strong></div>';
-      return `<div class="tip-box"><div class="tip-title">${escapeHtml(point.name)} - ${point.uf}<small>${br.format(total)} empresas no filtro</small></div>${body}</div>`;
+      return `<div class="tip-box"><div class="tip-title">${escapeHtml(point.name)} - ${point.uf}<small>${br.format(total)} CNPJs no filtro</small></div>${body}</div>`;
     }
     function countsByCity() {
       const s = selected();
@@ -986,7 +986,7 @@
         layer.on('click', () => {
           const p = feature.properties;
           const n = currentCounts[String(p.code)] || 0;
-          layer.bindPopup(`<div class="popup-title">${escapeHtml(p.name)} - ${p.uf}</div><div class="popup-meta">${br.format(n)} empresas no filtro</div>`).openPopup();
+          layer.bindPopup(`<div class="popup-title">${escapeHtml(p.name)} - ${p.uf}</div><div class="popup-meta">${br.format(n)} CNPJs no filtro</div>`).openPopup();
         });
       }
     }).addTo(map);
@@ -1021,7 +1021,7 @@
     async function updateNcmCompanyList() {
       const s = selected();
       if (!s.ncmMatch.active) {
-        renderNcmCompanyList([], 'Selecione um NCM para listar empresas relacionadas.');
+        renderNcmCompanyList([], 'Selecione um NCM para listar CNPJs relacionados.');
         return;
       }
       const rows = visibleRows().slice(0, 8);
@@ -1029,7 +1029,7 @@
         renderNcmCompanyList([], null);
         return;
       }
-      renderNcmCompanyList([], 'Carregando empresas relacionadas...');
+      renderNcmCompanyList([], 'Carregando CNPJs relacionados...');
       const companies = [];
       for (const point of rows) {
         try {
@@ -1072,7 +1072,7 @@
           fillColor: colorScale(p.filtered),
           fillOpacity: 0.86
         })
-        .bindPopup(`<div class="popup-title">${escapeHtml(p.name)} - ${p.uf}</div><div class="popup-meta">${br.format(p.filtered)} empresas no filtro</div>`)
+        .bindPopup(`<div class="popup-title">${escapeHtml(p.name)} - ${p.uf}</div><div class="popup-meta">${br.format(p.filtered)} CNPJs no filtro</div>`)
         .bindTooltip(tooltipHtml(p, p.filtered), {
           sticky: true,
           direction: 'top',

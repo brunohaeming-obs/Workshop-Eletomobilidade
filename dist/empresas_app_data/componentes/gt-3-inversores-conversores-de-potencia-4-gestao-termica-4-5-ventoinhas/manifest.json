@@ -1,1 +1,1 @@
-{"columns":["cnpj","razao","uf","municipio","faturamento","grupo","grupoNome","divisao","divisaoNome","patentes","ipc"],"rows":1962,"pageSize":2000,"pages":1}
+{"columns":["cnpj","razao","municipioCodigo","uf","municipio","faturamento","grupo","grupoNome","divisao","divisaoNome","patentes","ipc","gt","subsistema","componente","componentId","ncms"],"rows":622,"pageSize":2000,"pages":1}

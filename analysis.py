@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
+import unicodedata
 from pathlib import Path
 
-import geopandas as gpd
 import pandas as pd
 
 
@@ -14,12 +15,16 @@ EMPRESAS_CSV = DATA_DIR / "empresas_rfb_2.csv"
 EMPRESAS_FATURAMENTO_XLSX = DATA_DIR / "empresas_rfb_databricks.xlsx"
 CNAE_XLSX = DATA_DIR / "CNAE subclasse - classe - grupo - divisão.xlsx"
 NCM_XLSX = DATA_DIR / "NCM_SH4 - atualizado 07.04.2026.xlsx"
+COMPONENTES_XLSX = DATA_DIR / "GT_NCM_Dados_Brutos.xlsx"
+PATENTES_INPI_XLSX = DATA_DIR / "INPI - patentes_depositantes_ipc.xlsx"
 GEOJSON_CACHE = DATA_DIR / "municipios_sul_geobr_2020.geojson"
 OUTPUT_HTML = ROOT / "visualizacao_empresas_rfb.html"
 OUTPUT_NCM_HTML = ROOT / "visualizacao_ncm_empresas.html"
+OUTPUT_COMPONENTES_HTML = ROOT / "visualizacao_componentes.html"
 DETAIL_DIR = ROOT / "empresas_app_data" / "municipios"
 DIST_DIR = ROOT / "dist"
 CNPJ_INDEX_DIR = ROOT / "empresas_app_data" / "cnpj_index"
+COMPONENT_INDEX_DIR = ROOT / "empresas_app_data" / "componentes"
 LEGACY_CNPJ_INDEX = ROOT / "empresas_app_data" / "cnpj_index.json"
 
 UF_ORDER = ["PR", "SC", "RS"]
@@ -35,6 +40,27 @@ def normalize_code(series: pd.Series) -> pd.Series:
     )
 
 
+def normalize_ncm_code(series: pd.Series) -> pd.Series:
+    digits = series.fillna("").astype(str).str.replace(r"\D", "", regex=True)
+    return digits.str.zfill(8).replace({"00000000": NA_VALUE, "": NA_VALUE})
+
+
+def normalize_cnpj(series: pd.Series) -> pd.Series:
+    return (
+        series.fillna("")
+        .astype(str)
+        .str.replace(r"\D", "", regex=True)
+        .str.zfill(14)
+    )
+
+
+def slugify(value: str) -> str:
+    text = unicodedata.normalize("NFKD", str(value)).encode("ascii", "ignore").decode("ascii").lower()
+    text = re.sub(r"[^a-z0-9]+", "-", text)
+    text = text.strip("-")
+    return text or "item"
+
+
 def cnae_group_from_subclass(series: pd.Series) -> pd.Series:
     digits = series.fillna("").astype(str).str.replace(r"\D", "", regex=True)
     return digits.str.zfill(7).str[:3].replace({"000": NA_VALUE, "": NA_VALUE})
@@ -42,6 +68,8 @@ def cnae_group_from_subclass(series: pd.Series) -> pd.Series:
 
 def load_municipios() -> gpd.GeoDataFrame:
     """Carrega a malha municipal local, ou baixa pelo geobr se o cache nao existir."""
+    import geopandas as gpd
+
     if GEOJSON_CACHE.exists():
         municipios = gpd.read_file(GEOJSON_CACHE)
     else:
@@ -137,6 +165,124 @@ def load_ncm_depara() -> pd.DataFrame:
     ).copy()
 
 
+def load_componentes_depara() -> pd.DataFrame:
+    cols = ["GT", "Arquitetura", "Subsistema", "Componente", "Codigo NCM", "Descricao NCM"]
+    componentes = pd.read_excel(
+        COMPONENTES_XLSX,
+        sheet_name="NCM_Eletromobilidade",
+        usecols=cols,
+        dtype=str,
+    )
+    componentes = componentes.rename(
+        columns={
+            "GT": "gt",
+            "Arquitetura": "arquitetura",
+            "Subsistema": "subsistema",
+            "Componente": "componente",
+            "Codigo NCM": "ncm",
+            "Descricao NCM": "ncm_descricao_gt",
+        }
+    )
+    componentes["ncm"] = normalize_ncm_code(componentes["ncm"])
+    for col in ["gt", "arquitetura", "subsistema", "componente", "ncm_descricao_gt"]:
+        componentes[col] = componentes[col].fillna(NA_VALUE).astype(str).str.strip()
+
+    keys = ["gt", "subsistema", "componente"]
+    unique_keys = componentes[keys].drop_duplicates().copy()
+    used: dict[str, int] = {}
+    ids = []
+    for row in unique_keys.itertuples(index=False):
+        base = slugify(f"{row.gt}-{row.subsistema}-{row.componente}")[:72].strip("-")
+        suffix = used.get(base, 0)
+        used[base] = suffix + 1
+        ids.append(base if suffix == 0 else f"{base}-{suffix + 1}")
+    unique_keys["component_id"] = ids
+    componentes = componentes.merge(unique_keys, on=keys, how="left")
+    return componentes.drop_duplicates(subset=["component_id", "ncm"]).copy()
+
+
+def load_patentes_inpi_stats() -> pd.DataFrame:
+    cols = ["NO_PEDIDO", "NO_CNPJ_CPF", "CD_TIPO_PFPJ", "CD_CLASSIF", "ANO"]
+    patentes = pd.read_excel(PATENTES_INPI_XLSX, usecols=cols, dtype=str)
+    patentes = patentes[patentes["CD_TIPO_PFPJ"].eq("J")].copy()
+    patentes["cnpj"] = normalize_cnpj(patentes["NO_CNPJ_CPF"])
+    patentes = patentes[patentes["cnpj"].str.len().eq(14) & patentes["cnpj"].ne("00000000000000")]
+    patentes["cnpj_raiz"] = patentes["cnpj"].str[:8]
+    patentes["ipc"] = (
+        patentes["CD_CLASSIF"]
+        .fillna("")
+        .astype(str)
+        .str.replace(" ", "", regex=False)
+        .str[:4]
+    )
+    patentes["ano"] = pd.to_numeric(patentes["ANO"], errors="coerce").astype("Int64")
+    patentes = patentes.drop_duplicates(subset=["cnpj", "NO_PEDIDO", "ipc"])
+
+    pedido_stats = (
+        patentes.drop_duplicates(subset=["cnpj", "NO_PEDIDO"])
+        .groupby("cnpj", dropna=False)
+        .agg(patentes=("NO_PEDIDO", "nunique"), primeiro_ano=("ano", "min"), ultimo_ano=("ano", "max"))
+        .reset_index()
+    )
+    ipc_stats = (
+        patentes.groupby(["cnpj", "ipc"], dropna=False)["NO_PEDIDO"]
+        .nunique()
+        .reset_index(name="n")
+        .sort_values(["cnpj", "n", "ipc"], ascending=[True, False, True])
+    )
+    top_ipc = (
+        ipc_stats.groupby("cnpj", sort=False)
+        .head(6)
+        .groupby("cnpj")["ipc"]
+        .apply(lambda values: [value for value in values if value])
+        .reset_index(name="ipc_top")
+    )
+    stats = pedido_stats.merge(top_ipc, on="cnpj", how="left")
+    stats["ipc_top"] = stats["ipc_top"].apply(lambda value: value if isinstance(value, list) else [])
+    stats["cnpj_raiz"] = stats["cnpj"].str[:8]
+    return stats
+
+
+def attach_patent_stats(empresas: pd.DataFrame, patentes: pd.DataFrame) -> pd.DataFrame:
+    empresas = empresas.copy()
+    empresas["cnpj_raiz"] = empresas["nr_cnpj"].astype(str).str[:8]
+    direct = patentes.set_index("cnpj")
+    root = (
+        patentes.explode("ipc_top")
+        .groupby("cnpj_raiz", dropna=False)
+        .agg(
+            patentes_raiz=("patentes", "sum"),
+            primeiro_ano=("primeiro_ano", "min"),
+            ultimo_ano=("ultimo_ano", "max"),
+            ipc_top=("ipc_top", lambda values: sorted({str(value) for value in values if str(value)})),
+        )
+        .reset_index()
+        .set_index("cnpj_raiz")
+    )
+    empresas["patentes"] = empresas["nr_cnpj"].map(direct["patentes"]).fillna(0).astype("int64")
+    empresas["patentes_raiz"] = empresas["cnpj_raiz"].map(root["patentes_raiz"]).fillna(0).astype("int64")
+    empresas["patentes_total"] = empresas[["patentes", "patentes_raiz"]].max(axis=1).astype("int64")
+    empresas["tem_patente"] = empresas["patentes_total"] > 0
+    empresas["ipc_top"] = empresas["nr_cnpj"].map(direct["ipc_top"])
+    root_ipc = empresas["cnpj_raiz"].map(root["ipc_top"])
+    empresas["ipc_top"] = [
+        direct_ipc if isinstance(direct_ipc, list) and direct_ipc else (raiz_ipc if isinstance(raiz_ipc, list) else [])
+        for direct_ipc, raiz_ipc in zip(empresas["ipc_top"], root_ipc)
+    ]
+    return empresas
+
+
+def component_cnae_map() -> pd.DataFrame:
+    componentes = load_componentes_depara()
+    ncm = load_ncm_depara()[
+        ["ncm", "ncm_nome", "cnae_grupo", "cnae_grupo_nome", "cnae_divisao", "cnae_divisao_nome", "intensidade"]
+    ].drop_duplicates()
+    mapped = componentes.merge(ncm, on="ncm", how="left")
+    for col in ["ncm_nome", "cnae_grupo", "cnae_grupo_nome", "cnae_divisao", "cnae_divisao_nome", "intensidade"]:
+        mapped[col] = mapped[col].fillna(NA_VALUE).astype(str).str.strip()
+    return mapped
+
+
 def load_faturamento_depara() -> pd.DataFrame:
     faturamento = pd.read_excel(
         EMPRESAS_FATURAMENTO_XLSX,
@@ -167,7 +313,6 @@ def load_empresas() -> pd.DataFrame:
         "cd_cnae_fiscal_secundaria",
         "sg_uf",
         "cd_municipio_ibge",
-        "nr_cnpj_valido",
     ]
     df = pd.read_csv(
         EMPRESAS_CSV,
@@ -180,12 +325,10 @@ def load_empresas() -> pd.DataFrame:
             "cd_cnae_fiscal_secundaria": "string",
             "sg_uf": "string",
             "cd_municipio_ibge": "Int64",
-            "nr_cnpj_valido": "string",
         },
     )
     df = df.rename(columns={"nm_razao_social": "nm_razao_social_empresarial"})
     df = df[df["sg_uf"].isin(UF_ORDER)].copy()
-    df = df[df["nr_cnpj_valido"].fillna("") == "CNPJ válido"].copy()
     df["cd_municipio_ibge"] = pd.to_numeric(
         df["cd_municipio_ibge"], errors="coerce"
     ).astype("Int64")
@@ -193,6 +336,9 @@ def load_empresas() -> pd.DataFrame:
     df["cd_municipio_ibge"] = df["cd_municipio_ibge"].astype("int64")
     df["nr_cnpj"] = df["nr_cnpj"].fillna("").astype(str).str.replace(r"\D", "", regex=True)
     df["nr_cnpj"] = df["nr_cnpj"].str.zfill(14)
+    faturamento = load_faturamento_depara()
+    cnpjs_ativos = set(faturamento["nr_cnpj"])
+    df = df[df["nr_cnpj"].isin(cnpjs_ativos)].copy()
     df["nm_porte_obs_Novo"] = df["nm_porte_obs_Novo"].fillna(NA_VALUE).astype(str)
     df["nm_razao_social_empresarial"] = (
         df["nm_razao_social_empresarial"].fillna(NA_VALUE).astype(str).str.strip()
@@ -203,7 +349,6 @@ def load_empresas() -> pd.DataFrame:
     df["cnae_secundario"] = (
         df["cd_cnae_fiscal_secundaria"].fillna(NA_VALUE).astype(str).str.strip()
     )
-    faturamento = load_faturamento_depara()
     df = df.merge(faturamento, on="nr_cnpj", how="left")
     df["ds_faixa_faturamento_grupo"] = (
         df["ds_faixa_faturamento_grupo"].fillna(NA_VALUE).astype(str).str.strip()
@@ -264,7 +409,7 @@ def write_detail_files(empresas: pd.DataFrame) -> None:
     }
     detail_page_size = 5000
     for code, part in empresas.groupby("cd_municipio_ibge", sort=False):
-        records = part[cols].rename(columns=renamed).fillna(NA_VALUE).copy()
+        records = part[cols].drop_duplicates(subset=["nr_cnpj"]).rename(columns=renamed).fillna(NA_VALUE).copy()
         records["cnpj"] = records["cnpj"].astype(str)
         records = records.sort_values(["faturamento", "razao"], kind="stable")
         city_dir = DETAIL_DIR / str(int(code))
@@ -339,8 +484,104 @@ def write_cnpj_index(empresas: pd.DataFrame) -> None:
     )
 
 
+def write_component_files(empresas: pd.DataFrame, mapped: pd.DataFrame) -> None:
+    if COMPONENT_INDEX_DIR.exists():
+        shutil.rmtree(COMPONENT_INDEX_DIR)
+    COMPONENT_INDEX_DIR.mkdir(parents=True, exist_ok=True)
+
+    cols = [
+        "nr_cnpj",
+        "nm_razao_social_empresarial",
+        "cd_municipio_ibge",
+        "sg_uf",
+        "nm_municipio",
+        "ds_faixa_faturamento_grupo",
+        "cnae_grupo",
+        "cnae_grupo_nome",
+        "cnae_divisao",
+        "cnae_divisao_nome",
+        "patentes_total",
+        "ipc_top",
+    ]
+    renamed = {
+        "nr_cnpj": "cnpj",
+        "nm_razao_social_empresarial": "razao",
+        "cd_municipio_ibge": "municipioCodigo",
+        "sg_uf": "uf",
+        "nm_municipio": "municipio",
+        "ds_faixa_faturamento_grupo": "faturamento",
+        "cnae_grupo": "grupo",
+        "cnae_grupo_nome": "grupoNome",
+        "cnae_divisao": "divisao",
+        "cnae_divisao_nome": "divisaoNome",
+        "patentes_total": "patentes",
+        "ipc_top": "ipc",
+    }
+    page_size = 2000
+    manifest: dict[str, dict] = {}
+    for component_id, part in mapped.groupby("component_id", sort=False):
+        groups = {str(value) for value in part["cnae_grupo"] if str(value) != NA_VALUE}
+        first = part.iloc[0]
+        ncm_by_group = (
+            part.loc[part["cnae_grupo"].ne(NA_VALUE), ["cnae_grupo", "ncm"]]
+            .drop_duplicates()
+            .groupby("cnae_grupo")["ncm"]
+            .apply(lambda values: sorted({str(value) for value in values}))
+            .to_dict()
+        )
+        component_dir = COMPONENT_INDEX_DIR / str(component_id)
+        component_dir.mkdir(parents=True, exist_ok=True)
+        if groups:
+            records = empresas[empresas["cnae_grupo"].isin(groups)][cols].drop_duplicates(subset=["nr_cnpj"]).copy()
+        else:
+            records = empresas.iloc[0:0][cols].copy()
+        records = records.rename(columns=renamed).fillna(NA_VALUE)
+        records["cnpj"] = records["cnpj"].astype(str)
+        records["municipioCodigo"] = records["municipioCodigo"].astype(str)
+        records["gt"] = first["gt"]
+        records["subsistema"] = first["subsistema"]
+        records["componente"] = first["componente"]
+        records["componentId"] = str(component_id)
+        records["ncms"] = records["grupo"].map(lambda value: ncm_by_group.get(str(value), []))
+        records["ipc"] = records["ipc"].apply(lambda value: value if isinstance(value, list) else [])
+        records = records.sort_values(["patentes", "razao"], ascending=[False, True], kind="stable")
+        columns = list(records.columns)
+        total_rows = int(len(records))
+        total_pages = max(1, (total_rows + page_size - 1) // page_size)
+        component_manifest = {
+            "columns": columns,
+            "rows": total_rows,
+            "pageSize": page_size,
+            "pages": total_pages,
+        }
+        manifest[str(component_id)] = {
+            "rows": total_rows,
+            "pages": total_pages,
+            "pageSize": page_size,
+        }
+        (component_dir / "manifest.json").write_text(
+            json.dumps(component_manifest, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8",
+        )
+        for page_idx in range(total_pages):
+            start = page_idx * page_size
+            page = records.iloc[start : start + page_size]
+            (component_dir / f"{page_idx + 1}.json").write_text(
+                json.dumps(
+                    {"rows": page.values.tolist()},
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ),
+                encoding="utf-8",
+            )
+    (COMPONENT_INDEX_DIR / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
+
+
 def option_list(df: pd.DataFrame, value_col: str, label_col: str | None = None) -> list[dict]:
-    count = df.groupby(value_col, dropna=False)["nr_cnpj"].size().reset_index(name="count")
+    count = df.groupby(value_col, dropna=False)["nr_cnpj"].nunique().reset_index(name="count")
     if label_col:
         labels = df[[value_col, label_col]].drop_duplicates(subset=[value_col])
         count = count.merge(labels, on=value_col, how="left")
@@ -360,7 +601,7 @@ def count_informative_revenue(empresas: pd.DataFrame) -> int:
 def build_payload(empresas: pd.DataFrame, municipios: gpd.GeoDataFrame) -> dict:
     city = (
         empresas.groupby(["cd_municipio_ibge", "sg_uf", "nm_municipio"], dropna=False)
-        .agg(empresas=("nr_cnpj", "size"), cnpjs=("nr_cnpj", "nunique"))
+        .agg(empresas=("nr_cnpj", "nunique"), cnpjs=("nr_cnpj", "nunique"))
         .reset_index()
         .rename(columns={"cd_municipio_ibge": "code_muni"})
     )
@@ -402,7 +643,7 @@ def build_payload(empresas: pd.DataFrame, municipios: gpd.GeoDataFrame) -> dict:
     ]
     records = (
         empresas.groupby(record_cols, dropna=False)["nr_cnpj"]
-        .size()
+        .nunique()
         .reset_index(name="n")
         .rename(
             columns={
@@ -494,7 +735,7 @@ def build_ncm_payload(empresas: pd.DataFrame, municipios: gpd.GeoDataFrame) -> d
     ncm = load_ncm_depara()
     city = (
         empresas.groupby(["cd_municipio_ibge", "sg_uf", "nm_municipio"], dropna=False)
-        .agg(empresas=("nr_cnpj", "size"))
+        .agg(empresas=("nr_cnpj", "nunique"))
         .reset_index()
         .rename(columns={"cd_municipio_ibge": "code_muni"})
     )
@@ -528,7 +769,7 @@ def build_ncm_payload(empresas: pd.DataFrame, municipios: gpd.GeoDataFrame) -> d
             ],
             dropna=False,
         )["nr_cnpj"]
-        .size()
+        .nunique()
         .reset_index(name="n")
         .rename(
             columns={
@@ -595,6 +836,358 @@ def build_ncm_payload(empresas: pd.DataFrame, municipios: gpd.GeoDataFrame) -> d
     }
 
 
+def build_componentes_payload(empresas: pd.DataFrame, municipios: gpd.GeoDataFrame, mapped: pd.DataFrame) -> dict:
+    city = (
+        empresas.groupby(["cd_municipio_ibge", "sg_uf", "nm_municipio"], dropna=False)
+        .agg(empresas=("nr_cnpj", "nunique"))
+        .reset_index()
+        .rename(columns={"cd_municipio_ibge": "code_muni"})
+    )
+    merged = municipios.merge(city, on="code_muni", how="inner")
+    centroids = merged.to_crs(epsg=5880).geometry.centroid.to_crs(epsg=4326)
+    points = [
+        {
+            "code": str(row.code_muni),
+            "name": row.nm_municipio,
+            "uf": row.sg_uf,
+            "lat": round(point.y, 6),
+            "lon": round(point.x, 6),
+        }
+        for row, point in zip(merged.itertuples(index=False), centroids)
+    ]
+
+    geo = merged[["code_muni", "name_muni", "abbrev_state", "geometry"]].rename(
+        columns={"code_muni": "code", "name_muni": "name", "abbrev_state": "uf"}
+    )
+    geo["code"] = geo["code"].astype(str)
+    geo["geometry"] = geo.geometry.simplify(0.01, preserve_topology=True)
+
+    component_rows = []
+    city_components = []
+    component_mappings = []
+    mapping_rows = []
+    gt_ncms = set(mapped["ncm"].astype(str))
+    mapped_ncms = set(mapped.loc[mapped["cnae_grupo"].ne(NA_VALUE), "ncm"].astype(str))
+
+    city_cnae = (
+        empresas.groupby(
+            [
+                "cd_municipio_ibge",
+                "sg_uf",
+                "nm_municipio",
+                "cnae_grupo",
+                "cnae_grupo_nome",
+                "cnae_divisao",
+                "cnae_divisao_nome",
+            ],
+            dropna=False,
+        )
+        .agg(
+            n=("nr_cnpj", "nunique"),
+            cnpjs=("nr_cnpj", "nunique"),
+            patented=("tem_patente", "sum"),
+            patents=("patentes_total", "sum"),
+        )
+        .reset_index()
+        .rename(
+            columns={
+                "cd_municipio_ibge": "code",
+                "cnae_grupo": "group",
+                "cnae_grupo_nome": "groupName",
+                "cnae_divisao": "division",
+                "cnae_divisao_nome": "divisionName",
+            }
+        )
+    )
+    city_cnae["code"] = city_cnae["code"].astype(str)
+
+    for component_id, part in mapped.groupby("component_id", sort=False):
+        first = part.iloc[0]
+        groups = sorted({str(value) for value in part["cnae_grupo"] if str(value) != NA_VALUE})
+        ncm_rows = (
+            part[["ncm", "ncm_descricao_gt", "ncm_nome"]]
+            .drop_duplicates(subset=["ncm"])
+            .sort_values("ncm")
+        )
+        ncm_company_counts = {}
+        for ncm_code, ncm_part in part.groupby("ncm", sort=False):
+            ncm_groups = sorted({str(value) for value in ncm_part["cnae_grupo"] if str(value) != NA_VALUE})
+            if ncm_groups:
+                ncm_company_counts[str(ncm_code)] = int(
+                    empresas.loc[empresas["cnae_grupo"].isin(ncm_groups), "nr_cnpj"].nunique()
+                )
+            else:
+                ncm_company_counts[str(ncm_code)] = 0
+        cnae_rows = (
+            part[["cnae_grupo", "cnae_grupo_nome", "cnae_divisao", "cnae_divisao_nome", "intensidade"]]
+            .drop_duplicates(subset=["cnae_grupo"])
+            .sort_values("cnae_grupo")
+        )
+        for row in (
+            part[
+                [
+                    "ncm",
+                    "ncm_descricao_gt",
+                    "ncm_nome",
+                    "cnae_grupo",
+                    "cnae_grupo_nome",
+                    "cnae_divisao",
+                    "cnae_divisao_nome",
+                    "intensidade",
+                ]
+            ]
+            .drop_duplicates()
+            .itertuples(index=False)
+        ):
+            if row.cnae_grupo == NA_VALUE:
+                continue
+            mapping_rows.append(
+                {
+                    "component": str(component_id),
+                    "ncm": str(row.ncm),
+                    "group": str(row.cnae_grupo),
+                }
+            )
+            component_mappings.append(
+                {
+                    "component": str(component_id),
+                    "ncm": str(row.ncm),
+                    "ncmName": row.ncm_nome if row.ncm_nome != NA_VALUE else row.ncm_descricao_gt,
+                    "group": str(row.cnae_grupo),
+                    "groupName": row.cnae_grupo_nome,
+                    "division": row.cnae_divisao,
+                    "divisionName": row.cnae_divisao_nome,
+                    "tech": row.intensidade,
+                }
+            )
+        if groups:
+            companies = empresas[empresas["cnae_grupo"].isin(groups)].drop_duplicates(subset=["nr_cnpj"]).copy()
+        else:
+            companies = empresas.iloc[0:0].copy()
+
+        if not companies.empty:
+            city_stats = (
+                companies.groupby(["cd_municipio_ibge", "sg_uf", "nm_municipio"], dropna=False)
+                .agg(
+                    empresas=("nr_cnpj", "nunique"),
+                    cnpjs=("nr_cnpj", "nunique"),
+                    comPatente=("tem_patente", "sum"),
+                    patentes=("patentes_total", "sum"),
+                )
+                .reset_index()
+            )
+            for row in city_stats.itertuples(index=False):
+                city_components.append(
+                    {
+                        "code": str(row.cd_municipio_ibge),
+                        "component": str(component_id),
+                        "n": int(row.empresas),
+                        "cnpjs": int(row.cnpjs),
+                        "patented": int(row.comPatente),
+                        "patents": int(row.patentes),
+                    }
+                )
+            ipc_values = companies["ipc_top"].explode().dropna().astype(str)
+            top_ipc = [
+                {"code": code, "count": int(count)}
+                for code, count in ipc_values[ipc_values.ne("")].value_counts().head(8).items()
+            ]
+        else:
+            top_ipc = []
+
+        component_rows.append(
+            {
+                "id": str(component_id),
+                "gt": first["gt"],
+                "subsystem": first["subsistema"],
+                "name": first["componente"],
+                "ncmCount": int(ncm_rows["ncm"].nunique()),
+                "cnaeCount": int(len(groups)),
+                "companies": int(len(companies)),
+                "patentedCompanies": int(companies["tem_patente"].sum()) if not companies.empty else 0,
+                "patents": int(companies["patentes_total"].sum()) if not companies.empty else 0,
+                "topIpc": top_ipc,
+                "ncms": [
+                    {
+                        "code": str(row.ncm),
+                        "gtDescription": row.ncm_descricao_gt,
+                        "name": row.ncm_nome if row.ncm_nome != NA_VALUE else row.ncm_descricao_gt,
+                        "companies": ncm_company_counts.get(str(row.ncm), 0),
+                    }
+                    for row in ncm_rows.itertuples(index=False)
+                ],
+                "cnaes": [
+                    {
+                        "group": row.cnae_grupo,
+                        "groupName": row.cnae_grupo_nome,
+                        "division": row.cnae_divisao,
+                        "divisionName": row.cnae_divisao_nome,
+                        "tech": row.intensidade,
+                    }
+                    for row in cnae_rows.itertuples(index=False)
+                    if row.cnae_grupo != NA_VALUE
+                ],
+            }
+        )
+
+    component_rows = sorted(component_rows, key=lambda item: (-item["companies"], item["gt"], item["subsystem"], item["name"]))
+    chain_node_keys: set[str] = set()
+    chain_nodes: list[dict] = []
+    chain_links: list[dict] = []
+    subsystem_to_gt: dict[str, str] = {}
+    for item in component_rows:
+        gt_id = f"gt::{item['gt']}"
+        subsystem_id = f"subsystem::{item['gt']}::{item['subsystem']}"
+        component_id = f"component::{item['id']}"
+        for node_id, name, depth, kind in [
+            (gt_id, item["gt"], 2, "gt"),
+            (subsystem_id, item["subsystem"], 1, "subsystem"),
+            (component_id, item["name"], 0, "component"),
+        ]:
+            if node_id not in chain_node_keys:
+                chain_node_keys.add(node_id)
+                chain_nodes.append({"id": node_id, "name": name, "depth": depth, "kind": kind})
+        chain_links.append(
+            {
+                "source": component_id,
+                "target": subsystem_id,
+                "component": item["id"],
+                "subsystem": item["subsystem"],
+                "gt": item["gt"],
+                "value": int(item["companies"]),
+            }
+        )
+        subsystem_to_gt[subsystem_id] = item["gt"]
+    for subsystem_id, gt in subsystem_to_gt.items():
+        subsystem_name = subsystem_id.split("::", 2)[2]
+        value = int(
+            sum(
+                item["companies"]
+                for item in component_rows
+                if item["gt"] == gt and item["subsystem"] == subsystem_name
+            )
+        )
+        chain_links.append(
+            {
+                "source": subsystem_id,
+                "target": f"gt::{gt}",
+                "subsystem": subsystem_name,
+                "gt": gt,
+                "value": value,
+            }
+        )
+    mapping_df = pd.DataFrame(mapping_rows)
+    if mapping_df.empty:
+        city_component_ncm: list[dict] = []
+        city_component_ncm_filter: list[dict] = []
+    else:
+        city_component_ncm_df = (
+            city_cnae.merge(mapping_df, on="group", how="inner")
+            .groupby(["code", "component", "ncm"], dropna=False)
+            .agg(
+                n=("n", "sum"),
+                cnpjs=("cnpjs", "sum"),
+                patented=("patented", "sum"),
+                patents=("patents", "sum"),
+            )
+            .reset_index()
+        )
+        city_component_ncm = [
+            {
+                "code": str(row.code),
+                "component": str(row.component),
+                "ncm": str(row.ncm),
+                "n": int(row.n),
+                "cnpjs": int(row.cnpjs),
+                "patented": int(row.patented),
+                "patents": int(row.patents),
+            }
+            for row in city_component_ncm_df.itertuples(index=False)
+        ]
+        city_cnae_filter = (
+            empresas.groupby(
+                [
+                    "cd_municipio_ibge",
+                    "cnae_grupo",
+                    "ds_faixa_faturamento_grupo",
+                ],
+                dropna=False,
+            )
+            .agg(
+                n=("nr_cnpj", "nunique"),
+                cnpjs=("nr_cnpj", "nunique"),
+                patented=("tem_patente", "sum"),
+                patents=("patentes_total", "sum"),
+            )
+            .reset_index()
+            .rename(
+                columns={
+                    "cd_municipio_ibge": "code",
+                    "cnae_grupo": "group",
+                    "ds_faixa_faturamento_grupo": "revenue",
+                }
+            )
+        )
+        city_cnae_filter["code"] = city_cnae_filter["code"].astype(str)
+        city_component_ncm_filter_df = (
+            city_cnae_filter.merge(mapping_df, on="group", how="inner")
+            .groupby(["code", "component", "ncm", "group", "revenue"], dropna=False)
+            .agg(
+                n=("n", "sum"),
+                cnpjs=("cnpjs", "sum"),
+                patented=("patented", "sum"),
+                patents=("patents", "sum"),
+            )
+            .reset_index()
+        )
+        city_component_ncm_filter = [
+            {
+                "code": str(row.code),
+                "component": str(row.component),
+                "ncm": str(row.ncm),
+                "group": str(row.group),
+                "revenue": str(row.revenue),
+                "n": int(row.n),
+                "cnpjs": int(row.cnpjs),
+                "patented": int(row.patented),
+                "patents": int(row.patents),
+            }
+            for row in city_component_ncm_filter_df.itertuples(index=False)
+        ]
+    revenue_options = option_list(empresas, "ds_faixa_faturamento_grupo")
+    group_options = option_list(empresas, "cnae_grupo", "cnae_grupo_nome")
+    division_options = option_list(empresas, "cnae_divisao", "cnae_divisao_nome")
+    return {
+        "summary": {
+            "components": len(component_rows),
+            "ncmGt": len(gt_ncms),
+            "ncmMapped": len(mapped_ncms),
+            "ncmCoverage": round((len(mapped_ncms) / len(gt_ncms) * 100), 1) if gt_ncms else 0,
+            "empresas": int(len(empresas)),
+            "cnpjs": int(empresas["nr_cnpj"].nunique()),
+            "patentedCompanies": int(empresas["tem_patente"].sum()),
+            "patents": int(empresas["patentes_total"].sum()),
+            "ufs": UF_ORDER,
+        },
+        "geojson": json.loads(geo.to_json()),
+        "points": points,
+        "components": component_rows,
+        "chainNodes": chain_nodes,
+        "chainLinks": chain_links,
+        "cityComponents": city_components,
+        "cityComponentNcm": city_component_ncm,
+        "cityComponentNcmFilter": city_component_ncm_filter,
+        "cityCnae": city_cnae.to_dict(orient="records"),
+        "componentMappings": component_mappings,
+        "options": {
+            "uf": [{"value": uf, "label": uf, "count": int((empresas["sg_uf"] == uf).sum())} for uf in UF_ORDER],
+            "revenue": revenue_options,
+            "group": group_options,
+            "division": division_options,
+        },
+    }
+
+
 def write_ncm_html(payload: dict) -> None:
     data = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     html = f"""<!doctype html>
@@ -624,9 +1217,9 @@ def write_ncm_html(payload: dict) -> None:
     input, select {{ width:100%; border:1px solid #24486c; border-radius:7px; padding:10px 11px; background:#09182a; color:var(--ink); font:inherit; outline:none; }}
     select[multiple] {{ min-height:240px; padding:8px; }}
     select[multiple] option {{ padding:6px 7px; border-radius:5px; }}
-    button {{ border:1px solid #2b6ea3; border-radius:7px; padding:8px 10px; background:rgba(59,164,255,.12); color:var(--ink); font:inherit; font-size:12px; cursor:pointer; }}
-    button:hover {{ background:rgba(59,164,255,.22); }}
-    .actions {{ display:flex; gap:8px; justify-content:flex-end; margin-bottom:10px; }}
+    .actions a, button {{ border:1px solid #2b6ea3; border-radius:7px; padding:8px 10px; background:rgba(59,164,255,.12); color:var(--ink); font:inherit; font-size:12px; cursor:pointer; text-decoration:none; }}
+    .actions a:hover, button:hover {{ background:rgba(59,164,255,.22); }}
+    .actions {{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-bottom:10px; }}
     .details {{ border:1px solid var(--line); border-radius:8px; padding:13px; background:rgba(16,42,70,.42); margin-top:14px; }}
     .details h2, .ranking h2 {{ margin:0 0 9px; font-size:15px; }}
     .details p {{ margin:5px 0; color:var(--muted); font-size:13px; line-height:1.35; }}
@@ -654,12 +1247,12 @@ def write_ncm_html(payload: dict) -> None:
       <h1>NCM x Empresas</h1>
       <div class="sub">Selecione um ou mais códigos NCM para ver, no mapa, os municípios com empresas em CNAE grupo/divisão relacionados ao produto.</div>
       <section class="stats">
-        <div class="stat"><strong id="statEmpresas">0</strong><span>empresas relacionadas</span></div>
+        <div class="stat"><strong id="statEmpresas">0</strong><span>CNPJs relacionados</span></div>
         <div class="stat"><strong id="statMunicipios">0</strong><span>municípios ativos</span></div>
         <div class="stat"><strong>{payload["summary"]["ncm"]}</strong><span>NCMs na relação</span></div>
         <div class="stat"><strong>{", ".join(payload["summary"]["ufs"])}</strong><span>UFs na análise</span></div>
       </section>
-      <div class="actions"><button id="clearNcm" type="button">Limpar NCM</button></div>
+      <div class="actions"><a href="index.html">Empresas</a><a href="componentes.html">Componentes</a><button id="clearNcm" type="button">Limpar NCM</button></div>
       <section class="panel">
         <label for="ncmSearch">Procurar NCM</label>
         <input id="ncmSearch" type="search" placeholder="Digite código, produto ou descrição" />
@@ -741,7 +1334,7 @@ def write_ncm_html(payload: dict) -> None:
       const body = rows.length
         ? rows.map(row => `<div class="tip-row" title="${{escapeHtml(row.group + ' - ' + row.groupName)}}"><span>${{escapeHtml(row.division)}} / ${{escapeHtml(row.group)}} - ${{escapeHtml(row.groupName)}}</span><strong>${{br.format(row.n)}}</strong></div>`).join('')
         : '<div class="tip-row"><span>Nenhum CNAE relacionado no filtro</span><strong>0</strong></div>';
-      return `<div class="tip-box"><div class="tip-title">${{escapeHtml(point.name)}} - ${{point.uf}}<small>${{br.format(total)}} empresas relacionadas</small></div>${{body}}</div>`;
+      return `<div class="tip-box"><div class="tip-title">${{escapeHtml(point.name)}} - ${{point.uf}}<small>${{br.format(total)}} CNPJs relacionados</small></div>${{body}}</div>`;
     }}
     let currentCounts = {{}};
     const polygonLayer = L.geoJSON(DATA.geojson, {{
@@ -779,7 +1372,7 @@ def write_ncm_html(payload: dict) -> None:
         total += p.filtered;
         L.circleMarker([p.lat,p.lon], {{ radius:radiusScale(p.filtered), color:'#dff6ff', weight:1, fillColor:colorScale(p.filtered), fillOpacity:.86 }})
           .bindTooltip(tooltipHtml(p, p.filtered), {{ sticky:true, direction:'top', opacity:1, className:'hover-tooltip' }})
-          .bindPopup(`<strong>${{escapeHtml(p.name)}} - ${{p.uf}}</strong><br>${{br.format(p.filtered)}} empresas relacionadas`)
+          .bindPopup(`<strong>${{escapeHtml(p.name)}} - ${{p.uf}}</strong><br>${{br.format(p.filtered)}} CNPJs relacionados`)
           .addTo(pointLayer);
       }});
       statEmpresas.textContent = br.format(total);
@@ -807,6 +1400,213 @@ def write_ncm_html(payload: dict) -> None:
     OUTPUT_NCM_HTML.write_text(html, encoding="utf-8")
 
 
+def write_componentes_html(payload: dict) -> None:
+    data = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    html = f"""<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cadeia de Componentes</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {{ --bg:#06111f; --panel:#0b1728; --ink:#e8f3ff; --muted:#8aa7c4; --line:#1d3958; --blue:#3ba4ff; --green:#5ee48a; --cyan:#63d7ff; }}
+    * {{ box-sizing:border-box; }}
+    body {{ margin:0; font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--ink); }}
+    .app {{ min-height:100vh; display:grid; grid-template-columns:minmax(390px,500px) 1fr; }}
+    aside {{ max-height:100vh; overflow:auto; padding:24px; background:linear-gradient(180deg,#0b1728,#071321); border-right:1px solid var(--line); }}
+    h1 {{ margin:0 0 8px; font-size:27px; line-height:1.08; }}
+    h2 {{ margin:0 0 9px; font-size:15px; }}
+    .sub {{ color:var(--muted); font-size:14px; line-height:1.45; margin-bottom:18px; }}
+    .nav {{ display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; }}
+    .nav a, button {{ border:1px solid #2b6ea3; border-radius:7px; padding:8px 10px; background:rgba(59,164,255,.12); color:var(--ink); font:inherit; font-size:12px; cursor:pointer; text-decoration:none; }}
+    .nav a:hover, button:hover {{ background:rgba(59,164,255,.22); }}
+    .stats {{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }}
+    .stat {{ border:1px solid var(--line); border-radius:8px; padding:12px; background:rgba(16,42,70,.72); }}
+    .stat strong {{ display:block; color:var(--cyan); font-size:22px; line-height:1; }}
+    .stat span {{ display:block; margin-top:6px; color:var(--muted); font-size:12px; }}
+    .panel {{ border:1px solid var(--line); border-radius:8px; padding:14px; background:rgba(7,19,33,.72); margin-bottom:14px; }}
+    label {{ display:block; margin:0 0 6px; color:#aac9e9; font-size:11px; font-weight:800; text-transform:uppercase; }}
+    input, select {{ width:100%; border:1px solid #24486c; border-radius:7px; padding:10px 11px; background:#09182a; color:var(--ink); font:inherit; outline:none; }}
+    select {{ min-height:220px; padding:8px; }}
+    option {{ padding:6px 7px; border-radius:5px; }}
+    .toggle {{ display:flex; align-items:center; gap:8px; margin-top:10px; color:var(--muted); font-size:13px; }}
+    .toggle input {{ width:auto; }}
+    .details, .companies, .ranking {{ border:1px solid var(--line); border-radius:8px; padding:13px; background:rgba(16,42,70,.42); margin-top:14px; }}
+    .details p {{ margin:5px 0; color:var(--muted); font-size:13px; line-height:1.35; }}
+    .chips {{ display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }}
+    .chip {{ border:1px solid rgba(99,215,255,.32); border-radius:999px; padding:4px 7px; color:#cfe8ff; font-size:12px; }}
+    .company-row, .rank-row {{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; padding:9px 0; border-bottom:1px solid rgba(138,167,196,.16); font-size:13px; }}
+    .company-row small, .rank-row small {{ display:block; color:var(--muted); margin-top:2px; }}
+    .company-row strong, .rank-row strong {{ color:var(--cyan); }}
+    .company-row.patented strong:last-child {{ color:var(--green); }}
+    #map {{ width:100%; min-height:100vh; background:#06111f; }}
+    .leaflet-tile-pane {{ filter:brightness(.58) saturate(.75) hue-rotate(175deg) contrast(1.15); }}
+    .leaflet-popup-content-wrapper,.leaflet-popup-tip {{ background:#071321; color:var(--ink); border:1px solid var(--line); }}
+    @media (max-width:920px) {{ .app {{ grid-template-columns:1fr; }} aside {{ max-height:none; border-right:0; }} #map {{ min-height:72vh; }} }}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside>
+      <h1>Cadeia de Componentes</h1>
+      <div class="sub">CNPJs relacionados a componentes de eletromobilidade, com maturidade tecnológica aproximada por depósitos INPI vinculados ao CNPJ.</div>
+      <nav class="nav"><a href="index.html">Empresas</a></nav>
+      <section class="stats">
+        <div class="stat"><strong id="statEmpresas">0</strong><span>CNPJs relacionados</span></div>
+        <div class="stat"><strong id="statPatentes">0</strong><span>CNPJs com patentes</span></div>
+        <div class="stat"><strong>{payload["summary"]["components"]}</strong><span>componentes</span></div>
+        <div class="stat"><strong>{payload["summary"]["ncmCoverage"]}%</strong><span>cobertura NCM</span></div>
+      </section>
+      <section class="panel">
+        <label for="componentSearch">Procurar componente</label>
+        <input id="componentSearch" type="search" placeholder="Digite bateria, motor, inversor, NCM ou subsistema" />
+        <label for="componentSelect" style="margin-top:10px">Componente</label>
+        <select id="componentSelect" size="10"></select>
+        <label class="toggle"><input id="patentOnly" type="checkbox" /> Mostrar CNPJs com patentes na lista</label>
+      </section>
+      <section class="details">
+        <h2>Componente selecionado</h2>
+        <div id="componentDetails"><p>Selecione um componente para ver NCMs, CNAEs e indicadores.</p></div>
+      </section>
+      <section class="companies">
+        <h2>Empresas</h2>
+        <div id="companyList"><p class="sub">Selecione um componente para listar CNPJs relacionados.</p></div>
+      </section>
+      <section class="ranking">
+        <h2>MunicÃ­pios em destaque</h2>
+        <div id="ranking"></div>
+      </section>
+    </aside>
+    <div id="map"></div>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const DATA = {data};
+    const br = new Intl.NumberFormat('pt-BR');
+    const map = L.map('map', {{ zoomControl:false }}).setView([-27.6,-51.2],6);
+    L.control.zoom({{ position:'bottomright' }}).addTo(map);
+    L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{ maxZoom:18, attribution:'&copy; OpenStreetMap' }}).addTo(map);
+    const componentSelect = document.getElementById('componentSelect');
+    const componentSearch = document.getElementById('componentSearch');
+    const patentOnly = document.getElementById('patentOnly');
+    const componentDetails = document.getElementById('componentDetails');
+    const companyList = document.getElementById('companyList');
+    const ranking = document.getElementById('ranking');
+    const statEmpresas = document.getElementById('statEmpresas');
+    const statPatentes = document.getElementById('statPatentes');
+    const componentsById = Object.fromEntries(DATA.components.map(item => [item.id, item]));
+    const pointsByCode = Object.fromEntries(DATA.points.map(point => [point.code, point]));
+    const detailCache = {{}};
+
+    function escapeHtml(value) {{
+      return String(value ?? '').replace(/[&<>"']/g, char => ({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}}[char]));
+    }}
+    function normalizeText(value) {{
+      return String(value || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');
+    }}
+    function fillComponents() {{
+      componentSelect.innerHTML = DATA.components.map(item => `<option value="${{escapeHtml(item.id)}}" title="${{escapeHtml(item.name)}}">${{escapeHtml(item.name)}} · ${{escapeHtml(item.subsystem)}} (${{br.format(item.companies)}})</option>`).join('');
+      if (componentSelect.options.length) componentSelect.options[0].selected = true;
+    }}
+    function selectedComponent() {{
+      return componentsById[componentSelect.value] || DATA.components[0];
+    }}
+    function cityRows(componentId) {{
+      return DATA.cityComponents.filter(row => row.component === componentId);
+    }}
+    function color(value, max) {{
+      if (!value) return '#17304d';
+      const t = Math.min(1, value / Math.max(1, max));
+      return `rgb(${{28 + Math.round(26*t)}}, ${{104 + Math.round(112*t)}}, ${{100 + Math.round(55*t)}})`;
+    }}
+    const polygonLayer = L.geoJSON(DATA.geojson, {{
+      style: () => ({{ color:'#24486c', weight:.7, fillColor:'#102a46', fillOpacity:.45 }}),
+      onEachFeature: (feature, layer) => {{
+        layer.on('click', () => {{
+          const code = String(feature.properties.code);
+          const row = currentByCity[code];
+          const point = pointsByCode[code] || feature.properties;
+          layer.bindPopup(`<strong>${{escapeHtml(point.name || feature.properties.name)}}</strong><br>${{row ? br.format(row.n) : 0}} empresas<br>${{row ? br.format(row.patented) : 0}} com patentes`).openPopup();
+        }});
+      }}
+    }}).addTo(map);
+    let currentByCity = {{}};
+    function updateMap(rows) {{
+      currentByCity = Object.fromEntries(rows.map(row => [row.code, row]));
+      const max = Math.max(1, ...rows.map(row => row.n));
+      polygonLayer.eachLayer(layer => {{
+        const code = String(layer.feature.properties.code);
+        const row = currentByCity[code];
+        layer.setStyle({{ fillColor: color(row?.n || 0, max), fillOpacity: row ? .78 : .22, weight: row ? 1 : .5 }});
+      }});
+    }}
+    function renderDetails(component) {{
+      const ipc = component.topIpc.length ? component.topIpc.map(item => `<span class="chip">${{escapeHtml(item.code)}} · ${{br.format(item.count)}}</span>`).join('') : '<span class="chip">Sem IPC vinculado</span>';
+      const ncms = component.ncms.slice(0, 8).map(item => `<span class="chip">${{escapeHtml(item.code)}}</span>`).join('');
+      componentDetails.innerHTML = `
+        <p><strong>${{escapeHtml(component.gt)}}</strong></p>
+        <p>${{escapeHtml(component.subsystem)}}</p>
+        <p>${{br.format(component.ncmCount)}} NCMs · ${{br.format(component.cnaeCount)}} grupos CNAE · ${{br.format(component.patents)}} depósitos INPI nas CNPJs relacionados.</p>
+        <div class="chips">${{ncms}}</div>
+        <div class="chips">${{ipc}}</div>
+      `;
+    }}
+    async function loadCompanies(componentId) {{
+      if (!detailCache[componentId]) {{
+        const manifest = await fetch(`empresas_app_data/componentes/${{componentId}}/manifest.json`).then(response => response.json());
+        const page = await fetch(`empresas_app_data/componentes/${{componentId}}/1.json`).then(response => response.json());
+        detailCache[componentId] = {{ manifest, rows: page.rows.map(row => Object.fromEntries(manifest.columns.map((column, index) => [column, row[index]]))) }};
+      }}
+      return detailCache[componentId];
+    }}
+    async function renderCompanies(component) {{
+      companyList.innerHTML = '<p class="sub">Carregando empresas...</p>';
+      const payload = await loadCompanies(component.id);
+      let rows = payload.rows;
+      if (patentOnly.checked) rows = rows.filter(row => Number(row.patentes || 0) > 0);
+      rows = rows.slice(0, 80);
+      companyList.innerHTML = rows.length ? rows.map(row => `
+        <div class="company-row ${{Number(row.patentes || 0) > 0 ? 'patented' : ''}}">
+          <div><strong>${{escapeHtml(row.razao)}}</strong><small>${{escapeHtml(row.cnpj)}} · ${{escapeHtml(row.municipio)}} - ${{escapeHtml(row.uf)}}</small><small>CNAE ${{escapeHtml(row.grupo)}} · ${{escapeHtml(row.grupoNome)}}</small></div>
+          <strong>${{br.format(Number(row.patentes || 0))}}</strong>
+        </div>
+      `).join('') : '<p class="sub">Nenhuma empresa para o filtro atual.</p>';
+    }}
+    function renderRanking(rows) {{
+      ranking.innerHTML = rows.slice().sort((a,b) => b.n - a.n).slice(0, 10).map(row => {{
+        const point = pointsByCode[row.code] || {{}};
+        return `<div class="rank-row"><span>${{escapeHtml(point.name || row.code)}}<small>${{br.format(row.patented)}} CNPJs com patentes</small></span><strong>${{br.format(row.n)}}</strong></div>`;
+      }}).join('') || '<p class="sub">Sem municÃ­pios relacionados.</p>';
+    }}
+    async function update() {{
+      const component = selectedComponent();
+      if (!component) return;
+      const rows = cityRows(component.id);
+      statEmpresas.textContent = br.format(component.companies);
+      statPatentes.textContent = br.format(component.patentedCompanies);
+      renderDetails(component);
+      renderRanking(rows);
+      updateMap(rows);
+      await renderCompanies(component);
+    }}
+    componentSearch.addEventListener('input', () => {{
+      const term = normalizeText(componentSearch.value);
+      Array.from(componentSelect.options).forEach(option => {{
+        const component = componentsById[option.value];
+        option.hidden = term && !normalizeText(`${{component.name}} ${{component.subsystem}} ${{component.gt}} ${{component.ncms.map(item => item.code).join(' ')}}`).includes(term);
+      }});
+    }});
+    componentSelect.addEventListener('input', update);
+    patentOnly.addEventListener('change', update);
+    fillComponents();
+    update();
+  </script>
+</body>
+</html>"""
+    OUTPUT_COMPONENTES_HTML.write_text(html, encoding="utf-8")
+
+
 def externalize_payload(html_path: Path, output_html: Path, payload_path: Path) -> None:
     html = html_path.read_text(encoding="utf-8")
     marker = "    const DATA = "
@@ -821,7 +1621,7 @@ def externalize_payload(html_path: Path, output_html: Path, payload_path: Path) 
     replacement = (
         "    let DATA = null;\n"
         "    async function initApp() {\n"
-        f"      DATA = await fetch('{payload_path.relative_to(output_html.parent).as_posix()}').then(response => response.json());\n"
+        f"      DATA = await fetch('{payload_path.relative_to(output_html.parent).as_posix()}?v=' + Date.now(), {{ cache: 'no-store' }}).then(response => response.json());\n"
         "    const br ="
     )
     html = html[:start] + replacement + html[rest_start:]
@@ -852,6 +1652,11 @@ def create_deploy_package() -> None:
         OUTPUT_NCM_HTML,
         DIST_DIR / "ncm.html",
         DIST_DIR / "assets" / "data" / "ncm_payload.json",
+    )
+    externalize_payload(
+        OUTPUT_COMPONENTES_HTML,
+        DIST_DIR / "componentes.html",
+        DIST_DIR / "assets" / "data" / "componentes_payload.json",
     )
 
     shutil.copytree(ROOT / "empresas_app_data", DIST_DIR / "empresas_app_data")
@@ -917,8 +1722,10 @@ Arquivos principais:
 
 - `index.html`: visualizacao principal Empresas com filtro NCM integrado.
 - `ncm.html`: visualizacao auxiliar NCM x Empresas.
+- `componentes.html`: visualizacao da cadeia de componentes e maturidade por patentes.
 - `assets/data/*.json`: payloads agregados carregados pela aplicacao.
 - `empresas_app_data/municipios/*.json`: detalhes por municipio carregados sob demanda.
+- `empresas_app_data/componentes/*.json`: CNPJs relacionados a cada componente.
 """,
         encoding="utf-8",
     )
@@ -926,7 +1733,7 @@ Arquivos principais:
 
 def write_html(payload: dict) -> None:
     data = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-    cnpjs_label = f"{payload['summary']['cnpjs']:,}".replace(",", ".")
+    ncm_label = f"{payload['summary']['ncm']:,}".replace(",", ".")
     ufs_label = ", ".join(payload["summary"]["ufs"])
     html = f"""<!doctype html>
 <html lang="pt-BR">
@@ -1017,9 +1824,11 @@ def write_html(payload: dict) -> None:
     .top-actions {{
       margin-bottom: 12px;
       display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
       justify-content: flex-end;
     }}
-    button {{
+    .top-actions a, button {{
       border: 1px solid #2b6ea3;
       border-radius: 7px;
       padding: 8px 10px;
@@ -1028,8 +1837,9 @@ def write_html(payload: dict) -> None:
       font: inherit;
       font-size: 12px;
       cursor: pointer;
+      text-decoration: none;
     }}
-    button:hover {{
+    .top-actions a:hover, button:hover {{
       background: rgba(59, 164, 255, .22);
       border-color: var(--blue);
     }}
@@ -1353,13 +2163,15 @@ def write_html(payload: dict) -> None:
       <h1>Empresas</h1>
       <div class="sub">Mapa municipal com filtros por CNAE, NCM, CNPJ e características das empresas.</div>
       <section class="stats">
-        <div class="stat"><strong id="statEmpresas">0</strong><span>empresas no filtro</span></div>
+        <div class="stat"><strong id="statEmpresas">0</strong><span>CNPJs no filtro</span></div>
         <div class="stat"><strong id="statMunicipios">0</strong><span>municípios ativos</span></div>
-        <div class="stat"><strong>{cnpjs_label}</strong><span>CNPJs únicos</span></div>
+        <div class="stat"><strong>{ncm_label}</strong><span>NCMs na relação</span></div>
         <div class="stat"><strong>{ufs_label}</strong><span>UFs na análise</span></div>
       </section>
 
       <div class="top-actions">
+        <a href="ncm.html">NCM x Empresas</a>
+        <a href="componentes.html">Componentes</a>
         <button id="clearAll" type="button">Limpar todos os filtros</button>
       </div>
 
@@ -1412,11 +2224,11 @@ def write_html(payload: dict) -> None:
 
       <section class="ncm-company-panel">
         <div class="ncm-company-head">
-          <h2>Empresas relacionadas ao NCM</h2>
+          <h2>CNPJs relacionados ao NCM</h2>
           <button id="refreshNcmCompanies" type="button">Atualizar</button>
         </div>
         <div id="ncmCompanyList" class="ncm-company-body">
-          <div class="sub" style="padding:12px">Selecione um NCM para listar empresas relacionadas.</div>
+          <div class="sub" style="padding:12px">Selecione um NCM para listar CNPJs relacionados.</div>
         </div>
       </section>
 
@@ -1830,7 +2642,7 @@ def write_html(payload: dict) -> None:
       const body = rows.length
         ? rows.map(row => `<div class="tip-row" title="${{escapeHtml(row.group + ' - ' + row.label)}}"><span>${{escapeHtml(row.group)}} - ${{escapeHtml(row.label)}}</span><strong>${{br.format(row.n)}}</strong></div>`).join('')
         : '<div class="tip-row"><span>Nenhum CNAE no filtro</span><strong>0</strong></div>';
-      return `<div class="tip-box"><div class="tip-title">${{escapeHtml(point.name)}} - ${{point.uf}}<small>${{br.format(total)}} empresas no filtro</small></div>${{body}}</div>`;
+      return `<div class="tip-box"><div class="tip-title">${{escapeHtml(point.name)}} - ${{point.uf}}<small>${{br.format(total)}} CNPJs no filtro</small></div>${{body}}</div>`;
     }}
     function countsByCity() {{
       const s = selected();
@@ -1909,7 +2721,7 @@ def write_html(payload: dict) -> None:
         layer.on('click', () => {{
           const p = feature.properties;
           const n = currentCounts[String(p.code)] || 0;
-          layer.bindPopup(`<div class="popup-title">${{escapeHtml(p.name)}} - ${{p.uf}}</div><div class="popup-meta">${{br.format(n)}} empresas no filtro</div>`).openPopup();
+          layer.bindPopup(`<div class="popup-title">${{escapeHtml(p.name)}} - ${{p.uf}}</div><div class="popup-meta">${{br.format(n)}} CNPJs no filtro</div>`).openPopup();
         }});
       }}
     }}).addTo(map);
@@ -1944,7 +2756,7 @@ def write_html(payload: dict) -> None:
     async function updateNcmCompanyList() {{
       const s = selected();
       if (!s.ncmMatch.active) {{
-        renderNcmCompanyList([], 'Selecione um NCM para listar empresas relacionadas.');
+        renderNcmCompanyList([], 'Selecione um NCM para listar CNPJs relacionados.');
         return;
       }}
       const rows = visibleRows().slice(0, 8);
@@ -1952,7 +2764,7 @@ def write_html(payload: dict) -> None:
         renderNcmCompanyList([], null);
         return;
       }}
-      renderNcmCompanyList([], 'Carregando empresas relacionadas...');
+      renderNcmCompanyList([], 'Carregando CNPJs relacionados...');
       const companies = [];
       for (const point of rows) {{
         try {{
@@ -1995,7 +2807,7 @@ def write_html(payload: dict) -> None:
           fillColor: colorScale(p.filtered),
           fillOpacity: 0.86
         }})
-        .bindPopup(`<div class="popup-title">${{escapeHtml(p.name)}} - ${{p.uf}}</div><div class="popup-meta">${{br.format(p.filtered)}} empresas no filtro</div>`)
+        .bindPopup(`<div class="popup-title">${{escapeHtml(p.name)}} - ${{p.uf}}</div><div class="popup-meta">${{br.format(p.filtered)}} CNPJs no filtro</div>`)
         .bindTooltip(tooltipHtml(p, p.filtered), {{
           sticky: true,
           direction: 'top',
@@ -2067,6 +2879,691 @@ def write_html(payload: dict) -> None:
     OUTPUT_HTML.write_text(html, encoding="utf-8")
 
 
+def write_componentes_html(payload: dict) -> None:
+    data = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    html = """<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cadeia GT, NCM e CNPJs</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root { --bg:#06111f; --panel:#0b1728; --ink:#e8f3ff; --muted:#8aa7c4; --line:#1d3958; --blue:#3ba4ff; --green:#5ee48a; --cyan:#63d7ff; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--ink); }
+    .app { min-height:100vh; display:grid; grid-template-columns:minmax(420px,540px) 1fr; }
+    aside { max-height:100vh; overflow:auto; padding:24px; background:linear-gradient(180deg,#0b1728,#071321); border-right:1px solid var(--line); }
+    h1 { margin:0 0 8px; font-size:26px; line-height:1.08; }
+    h2 { margin:0 0 9px; font-size:15px; }
+    .sub { color:var(--muted); font-size:14px; line-height:1.45; margin-bottom:18px; }
+    .nav,.tabs { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; }
+    .nav a,button { border:1px solid #2b6ea3; border-radius:7px; padding:8px 10px; background:rgba(59,164,255,.12); color:var(--ink); font:inherit; font-size:12px; cursor:pointer; text-decoration:none; }
+    .nav a:hover,button:hover,.tab.active { background:rgba(59,164,255,.22); border-color:var(--cyan); color:var(--cyan); }
+    .stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+    .stat { border:1px solid var(--line); border-radius:8px; padding:12px; background:rgba(16,42,70,.72); }
+    .stat strong { display:block; color:var(--cyan); font-size:22px; line-height:1; }
+    .stat span { display:block; margin-top:6px; color:var(--muted); font-size:12px; }
+    .panel,.details,.companies,.ranking { border:1px solid var(--line); border-radius:8px; padding:13px; background:rgba(7,19,33,.72); margin-bottom:14px; }
+    label { display:block; margin:0 0 6px; color:#aac9e9; font-size:11px; font-weight:800; text-transform:uppercase; }
+    input,select { width:100%; border:1px solid #24486c; border-radius:7px; padding:10px 11px; background:#09182a; color:var(--ink); font:inherit; outline:none; }
+    select { min-height:126px; padding:8px; }
+    option { padding:6px 7px; border-radius:5px; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .tree { max-height:360px; overflow:auto; padding:8px; border:1px solid #24486c; border-radius:8px; background:#081625; }
+    details { border-left:1px solid rgba(138,167,196,.22); margin-left:7px; padding-left:9px; }
+    summary { cursor:pointer; padding:5px 0; color:#d8ecff; font-size:13px; }
+    .tree-row { display:flex; align-items:flex-start; gap:7px; padding:4px 0; color:#d8ecff; font-size:13px; line-height:1.25; text-transform:none; font-weight:500; }
+    .tree-row input { width:auto; margin-top:2px; }
+    .tree-row small { display:block; color:var(--muted); }
+    .view { display:none; }
+    .view.active { display:block; }
+    .details p { margin:5px 0; color:var(--muted); font-size:13px; line-height:1.35; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+    .chip { border:1px solid rgba(99,215,255,.32); border-radius:999px; padding:4px 7px; color:#cfe8ff; font-size:12px; }
+    .company-row,.rank-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; padding:9px 0; border-bottom:1px solid rgba(138,167,196,.16); font-size:13px; cursor:pointer; }
+    .company-row small,.rank-row small { display:block; color:var(--muted); margin-top:2px; }
+    .company-row strong,.rank-row strong { color:var(--cyan); }
+    .company-row.patented strong:last-child { color:var(--green); }
+    .table-wrap { overflow:auto; max-height:360px; border:1px solid rgba(138,167,196,.18); border-radius:8px; }
+    table { width:100%; min-width:620px; border-collapse:collapse; font-size:12px; }
+    th,td { padding:7px 8px; border-bottom:1px solid rgba(138,167,196,.16); text-align:left; vertical-align:top; }
+    th { color:#aac9e9; background:#09182a; position:sticky; top:0; z-index:1; }
+    td.num { text-align:right; color:var(--cyan); font-weight:700; }
+    .chart { width:100%; height:330px; border:1px solid rgba(138,167,196,.18); border-radius:8px; background:#081522; margin-top:10px; }
+    .flow-tools { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:4px 0 10px; }
+    .flow-tools select { width:auto; min-height:0; padding:8px 10px; }
+    #map { width:100%; min-height:100vh; background:#06111f; }
+    .leaflet-tile-pane { filter:brightness(.58) saturate(.75) hue-rotate(175deg) contrast(1.15); }
+    .leaflet-popup-content-wrapper,.leaflet-popup-tip { background:#071321; color:var(--ink); border:1px solid var(--line); }
+    @media (max-width:920px) { .app { grid-template-columns:1fr; } aside { max-height:none; border-right:0; } #map { min-height:72vh; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside>
+      <h1>Cadeia GT, NCM e CNPJs</h1>
+      <div class="sub">Drilldown integrado de GT, subsistema, componente, NCM, municipio e CNPJ.</div>
+      <nav class="nav"><a href="index.html">Empresas</a><button id="clearAll" type="button">Limpar filtros</button></nav>
+      <section class="stats">
+        <div class="stat"><strong id="statEmpresas">0</strong><span>CNPJs únicos na cadeia</span></div>
+        <div class="stat"><strong id="statMunicipios">0</strong><span>municipios ativos</span></div>
+        <div class="stat"><strong id="statComponentes">0</strong><span>componentes</span></div>
+        <div class="stat"><strong id="statNcms">0/0</strong><span>NCMs destacados</span></div>
+        <div class="stat"><strong id="statLinks">0</strong><span>vinculos CNPJ-NCM</span></div>
+      </section>
+      <section class="panel">
+        <label for="treeSearch">Arvore GT > Subsistema > Componente > NCM</label>
+        <input id="treeSearch" type="search" placeholder="Buscar GT, componente ou NCM" />
+        <div id="chainTree" class="tree"></div>
+      </section>
+      <section class="panel">
+        <div class="grid2">
+          <div><label for="ufFilter">UF</label><select id="ufFilter" multiple size="4"></select></div>
+          <div><label for="revenueFilter">Faturamento</label><select id="revenueFilter" multiple size="4"></select></div>
+          <div><label for="groupFilter">CNAE grupo</label><select id="groupFilter" multiple size="4"></select></div>
+          <div><label for="citySearch">Municipio</label><input id="citySearch" type="search" placeholder="Buscar municipio" /></div>
+        </div>
+        <label for="cnpjSearch" style="margin-top:10px">CNPJ ou razao social</label>
+        <input id="cnpjSearch" type="search" placeholder="Buscar na lista do municipio selecionado" />
+      </section>
+      <section class="details"><h2>Recorte atual</h2><div id="selectionDetails"></div></section>
+      <div class="tabs">
+        <button class="tab active" data-view="rankingView" type="button">Ranking</button>
+        <button class="tab" data-view="matrixView" type="button">Matriz</button>
+        <button class="tab" data-view="profileView" type="button">Perfil</button>
+        <button class="tab" data-view="flowsView" type="button">Fluxos</button>
+      </div>
+      <section class="ranking">
+        <div id="rankingView" class="view active"><h2>Municipios em destaque</h2><div id="ranking"></div></div>
+        <div id="matrixView" class="view"><h2>Matriz Municipio x NCM</h2><div id="matrix"></div></div>
+        <div id="profileView" class="view"><h2>Perfil do municipio</h2><div id="profile"><p>Selecione um municipio no mapa ou ranking.</p></div></div>
+        <div id="flowsView" class="view">
+          <h2>Fluxos territoriais e cadeia</h2>
+          <div class="flow-tools">
+            <label for="flowMode" style="margin:0">Setas</label>
+            <select id="flowMode">
+              <option value="component">Componente → Subsistema</option>
+              <option value="gt">Subsistema → GT</option>
+            </select>
+          </div>
+          <div id="flowMap" class="chart"></div>
+          <div id="flowSankey" class="chart"></div>
+        </div>
+      </section>
+      <section class="companies"><h2>CNPJs do municipio selecionado</h2><div id="companyList"><p class="sub">Selecione um municipio para listar CNPJs relacionados.</p></div></section>
+    </aside>
+    <div id="map"></div>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script>
+    const DATA = __DATA__;
+    const br = new Intl.NumberFormat('pt-BR');
+    const map = L.map('map', { zoomControl:false }).setView([-27.6,-51.2],6);
+    L.control.zoom({ position:'bottomright' }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18, attribution:'&copy; OpenStreetMap' }).addTo(map);
+    const chainTree = document.getElementById('chainTree');
+    const treeSearch = document.getElementById('treeSearch');
+    const ufFilter = document.getElementById('ufFilter');
+    const revenueFilter = document.getElementById('revenueFilter');
+    const groupFilter = document.getElementById('groupFilter');
+    const citySearch = document.getElementById('citySearch');
+    const cnpjSearch = document.getElementById('cnpjSearch');
+    const selectionDetails = document.getElementById('selectionDetails');
+    const companyList = document.getElementById('companyList');
+    const ranking = document.getElementById('ranking');
+    const matrix = document.getElementById('matrix');
+    const profile = document.getElementById('profile');
+    const flowMode = document.getElementById('flowMode');
+    const flowMapEl = document.getElementById('flowMap');
+    const flowSankeyEl = document.getElementById('flowSankey');
+    const statEmpresas = document.getElementById('statEmpresas');
+    const statMunicipios = document.getElementById('statMunicipios');
+    const statComponentes = document.getElementById('statComponentes');
+    const statNcms = document.getElementById('statNcms');
+    const statLinks = document.getElementById('statLinks');
+    const componentsById = Object.fromEntries(DATA.components.map(item => [item.id, item]));
+    const pointsByCode = Object.fromEntries(DATA.points.map(point => [point.code, point]));
+    const detailCache = {};
+    let activeCityCode = null;
+    let currentByCity = {};
+    let currentRows = [];
+    let currentState = null;
+    let updateSeq = 0;
+    let lastFlowStats = { componentStats:new Map(), subsystemStats:new Map(), gtStats:new Map(), cityComponent:new Map(), citySubsystem:new Map(), cityGt:new Map() };
+    let flowMapChart = null;
+    let flowSankeyChart = null;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    }
+    function normalizeText(value) {
+      return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+    function selectedValues(el) {
+      return new Set(Array.from(el.selectedOptions).map(option => option.value).filter(value => value !== 'all'));
+    }
+    function fillSelect(el, rows, allLabel) {
+      el.innerHTML = `<option value="all">${escapeHtml(allLabel)}</option>` + rows.map(row => `<option value="${escapeHtml(row.value)}">${escapeHtml(row.label)} (${br.format(row.count || 0)})</option>`).join('');
+      el.options[0].selected = true;
+    }
+    function matchesSet(value, set) {
+      return !set.size || set.has(String(value));
+    }
+    function buildTree() {
+      const byGt = new Map();
+      DATA.components.forEach(component => {
+        if (!byGt.has(component.gt)) byGt.set(component.gt, new Map());
+        const bySubsystem = byGt.get(component.gt);
+        if (!bySubsystem.has(component.subsystem)) bySubsystem.set(component.subsystem, []);
+        bySubsystem.get(component.subsystem).push(component);
+      });
+      chainTree.innerHTML = [...byGt.entries()].sort().map(([gt, bySubsystem]) => `
+        <details open data-search="${escapeHtml(normalizeText(gt))}">
+          <summary><label class="tree-row"><input type="checkbox" data-kind="gt" value="${escapeHtml(gt)}"> <span>${escapeHtml(gt)}<small>GT</small></span></label></summary>
+          ${[...bySubsystem.entries()].sort().map(([subsystem, components]) => `
+            <details open data-search="${escapeHtml(normalizeText(gt + ' ' + subsystem))}">
+              <summary><label class="tree-row"><input type="checkbox" data-kind="subsystem" data-gt="${escapeHtml(gt)}" value="${escapeHtml(subsystem)}"> <span>${escapeHtml(subsystem)}<small>Subsistema</small></span></label></summary>
+              ${components.sort((a,b) => a.name.localeCompare(b.name)).map(component => `
+                <details data-search="${escapeHtml(normalizeText(gt + ' ' + subsystem + ' ' + component.name + ' ' + component.ncms.map(n => n.code).join(' ')))}">
+                  <summary><label class="tree-row"><input type="checkbox" data-kind="component" value="${escapeHtml(component.id)}"> <span>${escapeHtml(component.name)}<small>${br.format(component.companies)} CNPJs no componente</small></span></label></summary>
+                  ${component.ncms.map(ncm => `<label class="tree-row" data-search="${escapeHtml(normalizeText(component.name + ' ' + ncm.code + ' ' + ncm.name))}"><input type="checkbox" data-kind="ncm" data-component="${escapeHtml(component.id)}" value="${escapeHtml(ncm.code)}"> <span>${escapeHtml(ncm.code)}<small>${br.format(ncm.companies || 0)} CNPJs neste NCM · ${escapeHtml(ncm.name || '')}</small></span></label>`).join('')}
+                </details>`).join('')}
+            </details>`).join('')}
+        </details>`).join('');
+    }
+    function checked(kind) {
+      return new Set(Array.from(chainTree.querySelectorAll(`input[data-kind="${kind}"]:checked`)).map(input => input.value));
+    }
+    function deriveChainSelection() {
+      const gt = checked('gt');
+      const subsystem = new Set(Array.from(chainTree.querySelectorAll('input[data-kind="subsystem"]:checked')).map(input => `${input.dataset.gt}||${input.value}`));
+      const component = checked('component');
+      const selectedNcmPairs = Array.from(chainTree.querySelectorAll('input[data-kind="ncm"]:checked')).map(input => ({ component:input.dataset.component, ncm:input.value }));
+      let components = DATA.components.filter(item =>
+        (!gt.size || gt.has(item.gt))
+        && (!subsystem.size || subsystem.has(`${item.gt}||${item.subsystem}`))
+        && (!component.size || component.has(item.id))
+      );
+      if (selectedNcmPairs.length) {
+        const ncmComponents = new Set(selectedNcmPairs.map(item => item.component));
+        components = components.filter(item => ncmComponents.has(item.id));
+      }
+      const componentIds = new Set(components.map(item => item.id));
+      const allNcmSet = new Set(components.flatMap(item => item.ncms.map(ncm => String(ncm.code))));
+      let ncmPairs = selectedNcmPairs.length
+        ? selectedNcmPairs
+        : DATA.componentMappings.filter(item => componentIds.has(item.component)).map(item => ({ component:item.component, ncm:String(item.ncm) }));
+      ncmPairs = ncmPairs.filter(item => componentIds.has(item.component));
+      const ncmSet = new Set(ncmPairs.map(item => String(item.ncm)));
+      return { components, componentIds, ncmPairs, ncmSet, allNcmSet };
+    }
+    function color(value, max) {
+      if (!value) return '#17304d';
+      const t = Math.min(1, value / Math.max(1, max));
+      return `rgb(${28 + Math.round(26*t)}, ${104 + Math.round(112*t)}, ${100 + Math.round(55*t)})`;
+    }
+    const polygonLayer = L.geoJSON(DATA.geojson, {
+      style: () => ({ color:'#24486c', weight:.7, fillColor:'#102a46', fillOpacity:.45 }),
+      onEachFeature: (feature, layer) => {
+        layer.on('click', () => {
+          const code = String(feature.properties.code);
+          activeCityCode = code;
+          const row = currentByCity[code];
+          const point = pointsByCode[code] || feature.properties;
+          layer.bindPopup(`<strong>${escapeHtml(point.name || feature.properties.name)}</strong><br>${row ? br.format(row.n) : 0} CNPJs únicos na cadeia`).openPopup();
+          renderProfile();
+          renderCompanies();
+        });
+      }
+    }).addTo(map);
+    function updateMap(rows) {
+      currentByCity = Object.fromEntries(rows.map(row => [row.code, row]));
+      const max = Math.max(1, ...rows.map(row => row.n));
+      polygonLayer.eachLayer(layer => {
+        const code = String(layer.feature.properties.code);
+        const row = currentByCity[code];
+        layer.setStyle({ fillColor: color(row?.n || 0, max), fillOpacity: row ? .78 : .22, weight: row ? 1 : .5 });
+      });
+    }
+    function componentNcmKey(row) {
+      return `${row.component}||${row.ncm}`;
+    }
+    function currentFilterState() {
+      const chain = deriveChainSelection();
+      const ufs = selectedValues(ufFilter);
+      const revenues = selectedValues(revenueFilter);
+      const groups = selectedValues(groupFilter);
+      const cityTerm = normalizeText(citySearch.value);
+      const allowedPairs = new Set(chain.ncmPairs.map(componentNcmKey));
+      const activeGroups = new Set(DATA.componentMappings.filter(item => chain.componentIds.has(item.component) && chain.ncmSet.has(String(item.ncm))).map(item => String(item.group)));
+      return { chain, ufs, revenues, groups, cityTerm, allowedPairs, activeGroups };
+    }
+    function computeRows(state) {
+      const byCity = new Map();
+      const sourceRows = DATA.cityComponentNcmFilter || DATA.cityComponentNcm;
+      sourceRows.filter(row => state.allowedPairs.has(componentNcmKey(row))).forEach(row => {
+        const point = pointsByCode[row.code];
+        if (!point) return;
+        if (!matchesSet(point.uf, state.ufs)) return;
+        if (row.revenue !== undefined && !matchesSet(row.revenue, state.revenues)) return;
+        if (row.group !== undefined && !matchesSet(row.group, state.groups)) return;
+        if (state.cityTerm && !normalizeText(point.name).includes(state.cityTerm)) return;
+        if (!byCity.has(row.code)) byCity.set(row.code, { code:row.code, n:0, cnpjs:0, patented:0, patents:0, ncms:new Set(), components:new Set() });
+        const out = byCity.get(row.code);
+        out.n += Number(row.cnpjs || row.n || 0);
+        out.cnpjs += Number(row.cnpjs || 0);
+        out.patented += Number(row.patented || 0);
+        out.patents += Number(row.patents || 0);
+        out.ncms.add(String(row.ncm));
+        out.components.add(String(row.component));
+      });
+      return [...byCity.values()].map(row => ({ ...row, n:row.cnpjs, ncms:[...row.ncms], components:[...row.components] })).sort((a,b) => b.n - a.n);
+    }
+    function renderDetails(state, rows) {
+      const total = rows.reduce((sum, row) => sum + row.n, 0);
+      const links = rows.reduce((sum, row) => sum + (row.links || 0), 0);
+      selectionDetails.innerHTML = `
+        <p><strong>${br.format(state.chain.components.length)}</strong> componentes, <strong>${br.format(state.chain.ncmSet.size)}/${br.format(state.chain.allNcmSet.size)}</strong> NCMs destacados e <strong>${br.format(state.activeGroups.size)}</strong> grupos CNAE relacionados.</p>
+        <p>${state.chain.components.length === DATA.components.length ? 'Sem seleção: considerando todos os GTs, subsistemas, componentes e NCMs mapeados.' : 'Seleção ativa: considerando apenas os itens marcados na árvore.'}</p>
+        <p><strong>${br.format(total)}</strong> CNPJs unicos na cadeia e <strong>${br.format(links)}</strong> vinculos CNPJ-NCM no recorte.</p>
+        <p>O vinculo CNPJ-NCM usa o CNAE da empresa e o de-para do NCM destacado.</p>
+        <div class="chips">${[...state.chain.ncmSet].slice(0, 14).map(ncm => `<span class="chip">${escapeHtml(ncm)}</span>`).join('') || '<span class="chip">Todos os NCMs da cadeia</span>'}</div>`;
+      statEmpresas.textContent = br.format(total);
+      statMunicipios.textContent = br.format(rows.length);
+      statComponentes.textContent = br.format(state.chain.components.length);
+      statNcms.textContent = `${br.format(state.chain.ncmSet.size)}/${br.format(state.chain.allNcmSet.size)}`;
+      statLinks.textContent = br.format(links);
+    }
+    async function loadComponentCompanies(componentId) {
+      if (!detailCache[componentId]) {
+        const manifest = await fetch(`empresas_app_data/componentes/${componentId}/manifest.json`).then(response => response.json());
+        const pages = [];
+        for (let page = 1; page <= manifest.pages; page += 1) pages.push(fetch(`empresas_app_data/componentes/${componentId}/${page}.json`).then(response => response.json()));
+        const payloads = await Promise.all(pages);
+        const rows = payloads.flatMap(payload => payload.rows).map(row => Object.fromEntries(manifest.columns.map((column, index) => [column, row[index]])));
+        detailCache[componentId] = { manifest, rows };
+      }
+      return detailCache[componentId];
+    }
+    function companyPasses(row, state) {
+      if (activeCityCode && String(row.municipioCodigo) !== String(activeCityCode)) return false;
+      return companyPassesGlobal(row, state);
+    }
+    function companyPassesGlobal(row, state) {
+      if (!matchesSet(row.uf, state.ufs)) return false;
+      if (!matchesSet(row.faturamento, state.revenues)) return false;
+      if (!matchesSet(row.grupo, state.groups)) return false;
+      if (state.cityTerm && !normalizeText(row.municipio).includes(state.cityTerm)) return false;
+      const term = normalizeText(cnpjSearch.value);
+      if (term && !normalizeText(`${row.cnpj} ${row.razao}`).includes(term)) return false;
+      const rowNcms = Array.isArray(row.ncms) ? row.ncms.map(String).filter(ncm => state.chain.ncmSet.has(ncm)) : [];
+      return rowNcms.length > 0 && state.chain.componentIds.has(String(row.componentId));
+    }
+    async function filteredCompaniesForActiveCity(limit = 300) {
+      if (!activeCityCode || !currentState) return [];
+      const payloads = await Promise.all([...currentState.chain.componentIds].map(id => loadComponentCompanies(id).catch(() => ({ rows:[] }))));
+      const seen = new Map();
+      payloads.flatMap(payload => payload.rows).forEach(row => {
+        if (!companyPasses(row, currentState)) return;
+        const rowNcms = row.ncms.filter(ncm => currentState.chain.ncmSet.has(String(ncm)));
+        const key = String(row.cnpj);
+        if (!seen.has(key)) {
+          seen.set(key, { ...row, ncms:new Set(rowNcms), componentes:new Set([row.componente]) });
+        } else {
+          const existing = seen.get(key);
+          rowNcms.forEach(ncm => existing.ncms.add(ncm));
+          existing.componentes.add(row.componente);
+          existing.patentes = Math.max(Number(existing.patentes || 0), Number(row.patentes || 0));
+        }
+      });
+      return [...seen.values()].map(row => ({ ...row, ncms:[...row.ncms], componente:[...row.componentes].join('; ') })).sort((a,b) => Number(b.patentes || 0) - Number(a.patentes || 0) || String(a.razao).localeCompare(String(b.razao))).slice(0, limit);
+    }
+    async function refineRowsByCompanySearch(state) {
+      const term = normalizeText(cnpjSearch.value);
+      if (!term) return null;
+      const payloads = await Promise.all([...state.chain.componentIds].map(id => loadComponentCompanies(id).catch(() => ({ rows:[] }))));
+      const byCity = new Map();
+      const seen = new Set();
+      payloads.flatMap(payload => payload.rows).forEach(row => {
+        if (!normalizeText(`${row.cnpj} ${row.razao}`).includes(term)) return;
+        if (!matchesSet(row.uf, state.ufs)) return;
+        if (!matchesSet(row.faturamento, state.revenues)) return;
+        if (!matchesSet(row.grupo, state.groups)) return;
+        if (state.cityTerm && !normalizeText(row.municipio).includes(state.cityTerm)) return;
+        if (!state.chain.componentIds.has(String(row.componentId))) return;
+        const rowNcms = Array.isArray(row.ncms) ? row.ncms.map(String).filter(ncm => state.chain.ncmSet.has(ncm)) : [];
+        if (!rowNcms.length) return;
+        const key = `${row.cnpj}||${row.componentId}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        const code = String(row.municipioCodigo);
+        if (!byCity.has(code)) byCity.set(code, { code, n:0, cnpjs:0, patented:0, patents:0, ncms:new Set(), components:new Set() });
+        const out = byCity.get(code);
+        out.n += 1;
+        out.cnpjs += 1;
+        out.patented += Number(row.patentes || 0) > 0 ? 1 : 0;
+        out.patents += Number(row.patentes || 0);
+        rowNcms.forEach(ncm => out.ncms.add(ncm));
+        out.components.add(String(row.componentId));
+      });
+      return [...byCity.values()].map(row => ({ ...row, ncms:[...row.ncms], components:[...row.components] })).sort((a,b) => b.n - a.n);
+    }
+    async function computeExactRowsFromCompanies(state) {
+      const payloads = await Promise.all([...state.chain.componentIds].map(id => loadComponentCompanies(id).catch(() => ({ rows:[] }))));
+      const byCity = new Map();
+      const componentStats = new Map();
+      const subsystemStats = new Map();
+      const gtStats = new Map();
+      const cityComponent = new Map();
+      const citySubsystem = new Map();
+      const cityGt = new Map();
+      function ensureStat(map, key, meta = {}) {
+        if (!map.has(key)) map.set(key, { key, cnpjs:new Set(), links:new Set(), ...meta });
+        return map.get(key);
+      }
+      function addToStat(stat, cnpj, linkKey) {
+        stat.cnpjs.add(cnpj);
+        stat.links.add(linkKey);
+      }
+      payloads.flatMap(payload => payload.rows).forEach(row => {
+        if (!companyPassesGlobal(row, state)) return;
+        const rowNcms = Array.isArray(row.ncms) ? row.ncms.map(String).filter(ncm => state.allowedPairs.has(`${row.componentId}||${ncm}`)) : [];
+        if (!rowNcms.length) return;
+        const component = componentsById[String(row.componentId)];
+        if (!component) return;
+        const code = String(row.municipioCodigo);
+        if (!byCity.has(code)) byCity.set(code, { code, cnpjs:new Set(), links:new Set(), patented:new Set(), patents:0, ncms:new Set(), components:new Set(), ncmCnpjs:new Map() });
+        const out = byCity.get(code);
+        const cnpj = String(row.cnpj);
+        out.cnpjs.add(cnpj);
+        if (Number(row.patentes || 0) > 0) out.patented.add(String(row.cnpj));
+        out.patents += Number(row.patentes || 0);
+        out.components.add(String(row.componentId));
+        rowNcms.forEach(ncm => {
+          const linkKey = `${cnpj}||${row.componentId}||${ncm}`;
+          out.ncms.add(ncm);
+          out.links.add(linkKey);
+          if (!out.ncmCnpjs.has(ncm)) out.ncmCnpjs.set(ncm, new Set());
+          out.ncmCnpjs.get(ncm).add(cnpj);
+          addToStat(ensureStat(componentStats, component.id, { component }), cnpj, linkKey);
+          addToStat(ensureStat(subsystemStats, `${component.gt}||${component.subsystem}`, { gt:component.gt, subsystem:component.subsystem }), cnpj, linkKey);
+          addToStat(ensureStat(gtStats, component.gt, { gt:component.gt }), cnpj, linkKey);
+          addToStat(ensureStat(cityComponent, `${code}||${component.id}`, { code, component }), cnpj, linkKey);
+          addToStat(ensureStat(citySubsystem, `${code}||${component.gt}||${component.subsystem}`, { code, gt:component.gt, subsystem:component.subsystem }), cnpj, linkKey);
+          addToStat(ensureStat(cityGt, `${code}||${component.gt}`, { code, gt:component.gt }), cnpj, linkKey);
+        });
+      });
+      lastFlowStats = { componentStats, subsystemStats, gtStats, cityComponent, citySubsystem, cityGt };
+      return [...byCity.values()].map(row => ({
+        code:row.code,
+        n:row.cnpjs.size,
+        cnpjs:row.cnpjs.size,
+        links:row.links.size,
+        patented:row.patented.size,
+        patents:row.patents,
+        ncms:[...row.ncms],
+        components:[...row.components],
+        ncmCounts:Object.fromEntries([...row.ncmCnpjs.entries()].map(([ncm, cnpjs]) => [ncm, cnpjs.size])),
+      })).sort((a,b) => b.n - a.n);
+    }
+    async function renderCompanies() {
+      if (!activeCityCode) {
+        companyList.innerHTML = '<p class="sub">Selecione um municipio no mapa ou ranking para listar CNPJs.</p>';
+        return;
+      }
+      companyList.innerHTML = '<p class="sub">Carregando CNPJs do municipio...</p>';
+      const rows = await filteredCompaniesForActiveCity();
+      companyList.innerHTML = rows.length ? rows.map(row => `
+        <div class="company-row ${Number(row.patentes || 0) > 0 ? 'patented' : ''}">
+          <div><strong>${escapeHtml(row.razao)}</strong><small>${escapeHtml(row.cnpj)} - ${escapeHtml(row.municipio)}/${escapeHtml(row.uf)}</small><small>${escapeHtml(row.gt)} > ${escapeHtml(row.subsistema)} > ${escapeHtml(row.componente)}</small><small>NCM ${escapeHtml(row.ncms.join(', '))} | CNAE ${escapeHtml(row.grupo)} - ${escapeHtml(row.grupoNome)}</small></div>
+          <strong>${br.format(Number(row.patentes || 0))}</strong>
+        </div>`).join('') : '<p class="sub">Nenhuma empresa para o filtro atual.</p>';
+    }
+    function renderRanking(rows) {
+      ranking.innerHTML = rows.slice(0, 10).map(row => {
+        const point = pointsByCode[row.code] || {};
+        return `<div class="rank-row" data-code="${escapeHtml(row.code)}"><span>${escapeHtml(point.name || row.code)}<small>${point.uf || ''} | ${br.format(row.ncms.length)} NCMs | ${br.format(row.links || 0)} vinculos</small></span><strong>${br.format(row.n)}</strong></div>`;
+      }).join('') || '<p class="sub">Sem municipios relacionados.</p>';
+      ranking.querySelectorAll('.rank-row').forEach(row => row.addEventListener('click', () => {
+        activeCityCode = row.dataset.code;
+        renderProfile();
+        renderCompanies();
+      }));
+    }
+    function renderMatrix(rows) {
+      const ncms = [...currentState.chain.ncmSet].slice(0, 12);
+      const body = rows.slice(0, 12).map(city => {
+        const point = pointsByCode[city.code] || {};
+        const cells = ncms.map(ncm => {
+          const total = city.ncmCounts?.[ncm] || 0;
+          return `<td class="num">${total ? br.format(total) : ''}</td>`;
+        }).join('');
+        return `<tr><td>${escapeHtml(point.name || city.code)}<br><small>${point.uf || ''}</small></td>${cells}</tr>`;
+      }).join('');
+      matrix.innerHTML = ncms.length ? `<div class="table-wrap"><table><thead><tr><th>Municipio</th>${ncms.map(ncm => `<th>${escapeHtml(ncm)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>` : '<p class="sub">Sem NCMs no recorte.</p>';
+    }
+    function renderProfile() {
+      if (!activeCityCode) {
+        profile.innerHTML = '<p>Selecione um municipio no mapa ou ranking.</p>';
+        return;
+      }
+      const city = currentByCity[activeCityCode];
+      const point = pointsByCode[activeCityCode] || {};
+      if (!city) {
+        profile.innerHTML = `<p>${escapeHtml(point.name || activeCityCode)} nao possui CNPJs na cadeia para o recorte atual.</p>`;
+        return;
+      }
+      const components = city.components.map(id => componentsById[id]).filter(Boolean);
+      const gtCounts = new Map();
+      components.forEach(item => gtCounts.set(item.gt, (gtCounts.get(item.gt) || 0) + 1));
+      profile.innerHTML = `<p><strong>${escapeHtml(point.name || activeCityCode)}/${escapeHtml(point.uf || '')}</strong></p><p>${br.format(city.n)} CNPJs unicos, ${br.format(city.links || 0)} vinculos, ${br.format(city.components.length)} componentes e ${br.format(city.ncms.length)} NCMs destacados.</p><div class="chips">${[...gtCounts.entries()].map(([gt,count]) => `<span class="chip">${escapeHtml(gt)}: ${br.format(count)}</span>`).join('')}</div><div class="chips">${city.ncms.slice(0, 18).map(ncm => `<span class="chip">${escapeHtml(ncm)}</span>`).join('')}</div>`;
+    }
+    function initFlowCharts() {
+      if (!window.echarts || flowMapChart) return;
+      echarts.registerMap('sulMunicipios', DATA.geojson);
+      flowMapChart = echarts.init(flowMapEl);
+      flowSankeyChart = echarts.init(flowSankeyEl);
+    }
+    function statValue(stat) {
+      return { cnpjs: stat?.cnpjs?.size || 0, links: stat?.links?.size || 0 };
+    }
+    function topCityFor(map, predicate) {
+      let best = null;
+      for (const stat of map.values()) {
+        if (!predicate(stat)) continue;
+        const value = stat.cnpjs.size;
+        if (!best || value > best.value) best = { code:stat.code, value };
+      }
+      return best;
+    }
+    function renderSankeyFlow() {
+      if (!flowSankeyChart) return;
+      const nodes = new Map();
+      const links = [];
+      function addNode(name, depth, value) {
+        if (!nodes.has(name)) nodes.set(name, { name, depth, value });
+      }
+      for (const stat of lastFlowStats.componentStats.values()) {
+        const component = stat.component;
+        const componentName = `Componente | ${component.name}`;
+        const subsystemName = `Subsistema | ${component.gt} | ${component.subsystem}`;
+        const gtName = `GT | ${component.gt}`;
+        addNode(componentName, 0, stat.cnpjs.size);
+        addNode(subsystemName, 1, statValue(lastFlowStats.subsystemStats.get(`${component.gt}||${component.subsystem}`)).cnpjs);
+        addNode(gtName, 2, statValue(lastFlowStats.gtStats.get(component.gt)).cnpjs);
+        links.push({ source:componentName, target:subsystemName, value:Math.max(1, stat.cnpjs.size), links:stat.links.size });
+      }
+      for (const stat of lastFlowStats.subsystemStats.values()) {
+        const subsystemName = `Subsistema | ${stat.gt} | ${stat.subsystem}`;
+        const gtName = `GT | ${stat.gt}`;
+        links.push({ source:subsystemName, target:gtName, value:Math.max(1, stat.cnpjs.size), links:stat.links.size });
+      }
+      flowSankeyChart.setOption({
+        backgroundColor:'#081522',
+        tooltip:{
+          trigger:'item',
+          triggerOn:'mousemove',
+          formatter: params => {
+            if (params.dataType === 'edge') return `${escapeHtml(params.data.source)}<br>→ ${escapeHtml(params.data.target)}<br>${br.format(params.data.value)} CNPJs únicos<br>${br.format(params.data.links || 0)} vínculos`;
+            return `${escapeHtml(params.name)}<br>${br.format(params.data.value || 0)} CNPJs únicos`;
+          }
+        },
+        series:[{
+          type:'sankey',
+          data:[...nodes.values()],
+          links,
+          nodeWidth:12,
+          nodeGap:8,
+          layoutIterations:64,
+          emphasis:{ focus:'adjacency' },
+          levels:[
+            { depth:0, itemStyle:{ color:'#54b6ff' }, lineStyle:{ color:'source', opacity:.45 } },
+            { depth:1, itemStyle:{ color:'#7ee19b' }, lineStyle:{ color:'source', opacity:.45 } },
+            { depth:2, itemStyle:{ color:'#ffd166' }, lineStyle:{ color:'source', opacity:.45 } },
+          ],
+          label:{ color:'#e8f3ff', fontSize:10 },
+          lineStyle:{ curveness:.5 }
+        }]
+      }, true);
+    }
+    function renderMapFlow() {
+      if (!flowMapChart) return;
+      const mode = flowMode.value;
+      const nodes = new Map();
+      const edges = [];
+      function addNode(code, weight) {
+        const point = pointsByCode[code];
+        if (!point) return;
+        const existing = nodes.get(code);
+        nodes.set(code, { name:code, labelName:`${point.name}/${point.uf}`, value:[point.lon, point.lat, (existing?.value?.[2] || 0) + weight] });
+      }
+      if (mode === 'component') {
+        for (const stat of lastFlowStats.cityComponent.values()) {
+          const target = topCityFor(lastFlowStats.citySubsystem, item => item.gt === stat.component.gt && item.subsystem === stat.component.subsystem);
+          if (!target || target.code === stat.code) continue;
+          const value = stat.cnpjs.size;
+          addNode(stat.code, value);
+          addNode(target.code, value);
+          edges.push({
+            source:stat.code,
+            target:target.code,
+            value,
+            links:stat.links.size,
+            level:'Componente → Subsistema',
+            label:`${stat.component.name} → ${stat.component.subsystem}`,
+            lineStyle:{ width:Math.max(1, Math.min(7, Math.sqrt(value))), opacity:.72, color:'#74e4ff' }
+          });
+        }
+      } else {
+        for (const stat of lastFlowStats.citySubsystem.values()) {
+          const target = topCityFor(lastFlowStats.cityGt, item => item.gt === stat.gt);
+          if (!target || target.code === stat.code) continue;
+          const value = stat.cnpjs.size;
+          addNode(stat.code, value);
+          addNode(target.code, value);
+          edges.push({
+            source:stat.code,
+            target:target.code,
+            value,
+            links:stat.links.size,
+            level:'Subsistema → GT',
+            label:`${stat.subsystem} → ${stat.gt}`,
+            lineStyle:{ width:Math.max(1, Math.min(7, Math.sqrt(value))), opacity:.72, color:'#ffd166' }
+          });
+        }
+      }
+      flowMapChart.setOption({
+        backgroundColor:'#081522',
+        tooltip:{
+          trigger:'item',
+          formatter: params => {
+            if (params.dataType === 'edge') return `${escapeHtml(params.data.level)}<br>${escapeHtml(params.data.label)}<br>${escapeHtml(pointsByCode[params.data.source]?.name || params.data.source)} → ${escapeHtml(pointsByCode[params.data.target]?.name || params.data.target)}<br>${br.format(params.data.value)} CNPJs únicos<br>${br.format(params.data.links || 0)} vínculos`;
+            return `${escapeHtml(params.data.labelName)}<br>${br.format(params.value?.[2] || 0)} CNPJs nas setas`;
+          }
+        },
+        geo:{
+          map:'sulMunicipios',
+          roam:true,
+          aspectScale:.86,
+          itemStyle:{ areaColor:'#102a46', borderColor:'#24486c', borderWidth:.35 },
+          emphasis:{ itemStyle:{ areaColor:'#174d75' }, label:{ show:false } }
+        },
+        series:[{
+          type:'graph',
+          coordinateSystem:'geo',
+          data:[...nodes.values()],
+          edges,
+          symbolSize: value => Math.max(5, Math.min(18, Math.sqrt(value[2] || 1) + 3)),
+          edgeSymbol:['none','arrow'],
+          edgeSymbolSize:7,
+          lineStyle:{ curveness:.18 },
+          itemStyle:{ color:'#7ee19b' },
+          label:{ show:false }
+        }]
+      }, true);
+    }
+    function renderFlows() {
+      initFlowCharts();
+      if (!flowMapChart || !flowSankeyChart) return;
+      renderMapFlow();
+      renderSankeyFlow();
+      setTimeout(() => { flowMapChart.resize(); flowSankeyChart.resize(); }, 0);
+    }
+    async function update() {
+      const seq = ++updateSeq;
+      currentState = currentFilterState();
+      currentRows = computeRows(currentState);
+      currentRows = await computeExactRowsFromCompanies(currentState);
+      if (seq !== updateSeq) return;
+      if (activeCityCode && !currentRows.some(row => row.code === activeCityCode)) activeCityCode = null;
+      renderDetails(currentState, currentRows);
+      renderRanking(currentRows);
+      renderMatrix(currentRows);
+      renderProfile();
+      updateMap(currentRows);
+      renderFlows();
+      await renderCompanies();
+    }
+    function resetAll() {
+      chainTree.querySelectorAll('input[type="checkbox"]').forEach(input => input.checked = false);
+      [ufFilter, revenueFilter, groupFilter].forEach(el => Array.from(el.options).forEach((option, index) => option.selected = index === 0));
+      treeSearch.value = '';
+      citySearch.value = '';
+      cnpjSearch.value = '';
+      activeCityCode = null;
+      update();
+    }
+    treeSearch.addEventListener('input', () => {
+      const term = normalizeText(treeSearch.value);
+      chainTree.querySelectorAll('[data-search]').forEach(node => {
+        node.hidden = term && !node.dataset.search.includes(term);
+      });
+    });
+    chainTree.addEventListener('change', update);
+    [ufFilter, revenueFilter, groupFilter].forEach(el => el.addEventListener('change', update));
+    [citySearch, cnpjSearch].forEach(el => el.addEventListener('input', update));
+    flowMode.addEventListener('change', renderFlows);
+    document.getElementById('clearAll').addEventListener('click', resetAll);
+    document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(item => item.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(item => item.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.view).classList.add('active');
+      if (tab.dataset.view === 'flowsView') renderFlows();
+    }));
+    buildTree();
+    fillSelect(ufFilter, DATA.options.uf, 'Todas UFs');
+    fillSelect(revenueFilter, DATA.options.revenue, 'Todos faturamentos');
+    fillSelect(groupFilter, DATA.options.group, 'Todos CNAEs');
+    update();
+  </script>
+</body>
+</html>""".replace("__DATA__", data)
+    OUTPUT_COMPONENTES_HTML.write_text(html, encoding="utf-8")
+
+
 def main() -> None:
     print("Lendo planilha de empresas e de-para CNAE...")
     empresas = load_empresas()
@@ -2086,12 +3583,23 @@ def main() -> None:
     print("Gerando visualização NCM x Empresas...")
     ncm_payload = build_ncm_payload(empresas, municipios)
     write_ncm_html(ncm_payload)
+    print("Carregando componentes e patentes INPI...")
+    mapped_componentes = component_cnae_map()
+    patentes = load_patentes_inpi_stats()
+    empresas_componentes = attach_patent_stats(empresas, patentes)
+    print("Gerando arquivos de empresas por componente...")
+    write_component_files(empresas_componentes, mapped_componentes)
+    print("Gerando visualização Cadeia de Componentes...")
+    componentes_payload = build_componentes_payload(empresas_componentes, municipios, mapped_componentes)
+    write_componentes_html(componentes_payload)
     print("Criando pacote otimizado para deploy...")
     create_deploy_package()
     print(f"OK: {OUTPUT_HTML}")
     print(f"OK: {OUTPUT_NCM_HTML}")
+    print(f"OK: {OUTPUT_COMPONENTES_HTML}")
     print(f"OK: {DIST_DIR}")
 
 
 if __name__ == "__main__":
     main()
+

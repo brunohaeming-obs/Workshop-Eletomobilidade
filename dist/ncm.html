@@ -55,7 +55,7 @@
       <h1>NCM x Empresas</h1>
       <div class="sub">Selecione um ou mais códigos NCM para ver, no mapa, os municípios com empresas em CNAE grupo/divisão relacionados ao produto.</div>
       <section class="stats">
-        <div class="stat"><strong id="statEmpresas">0</strong><span>empresas relacionadas</span></div>
+        <div class="stat"><strong id="statEmpresas">0</strong><span>CNPJs relacionados</span></div>
         <div class="stat"><strong id="statMunicipios">0</strong><span>municípios ativos</span></div>
         <div class="stat"><strong>13692</strong><span>NCMs na relação</span></div>
         <div class="stat"><strong>PR, SC, RS</strong><span>UFs na análise</span></div>
@@ -82,7 +82,7 @@
   <script>
     let DATA = null;
     async function initApp() {
-      DATA = await fetch('assets/data/ncm_payload.json').then(response => response.json());
+      DATA = await fetch('assets/data/ncm_payload.json?v=' + Date.now(), { cache: 'no-store' }).then(response => response.json());
     const br = new Intl.NumberFormat('pt-BR');
     const map = L.map('map', { zoomControl:false }).setView([-27.6,-51.2],6);
     L.control.zoom({ position:'bottomright' }).addTo(map);
@@ -144,7 +144,7 @@
       const body = rows.length
         ? rows.map(row => `<div class="tip-row" title="${escapeHtml(row.group + ' - ' + row.groupName)}"><span>${escapeHtml(row.division)} / ${escapeHtml(row.group)} - ${escapeHtml(row.groupName)}</span><strong>${br.format(row.n)}</strong></div>`).join('')
         : '<div class="tip-row"><span>Nenhum CNAE relacionado no filtro</span><strong>0</strong></div>';
-      return `<div class="tip-box"><div class="tip-title">${escapeHtml(point.name)} - ${point.uf}<small>${br.format(total)} empresas relacionadas</small></div>${body}</div>`;
+      return `<div class="tip-box"><div class="tip-title">${escapeHtml(point.name)} - ${point.uf}<small>${br.format(total)} CNPJs relacionados</small></div>${body}</div>`;
     }
     let currentCounts = {};
     const polygonLayer = L.geoJSON(DATA.geojson, {
@@ -182,7 +182,7 @@
         total += p.filtered;
         L.circleMarker([p.lat,p.lon], { radius:radiusScale(p.filtered), color:'#dff6ff', weight:1, fillColor:colorScale(p.filtered), fillOpacity:.86 })
           .bindTooltip(tooltipHtml(p, p.filtered), { sticky:true, direction:'top', opacity:1, className:'hover-tooltip' })
-          .bindPopup(`<strong>${escapeHtml(p.name)} - ${p.uf}</strong><br>${br.format(p.filtered)} empresas relacionadas`)
+          .bindPopup(`<strong>${escapeHtml(p.name)} - ${p.uf}</strong><br>${br.format(p.filtered)} CNPJs relacionados`)
           .addTo(pointLayer);
       });
       statEmpresas.textContent = br.format(total);

@@ -1,11 +1,11 @@
 # Deploy da ferramenta
 
-O pacote pronto para publicação fica na pasta `dist`.
+O pacote pronto para publicacao fica na pasta `dist`.
 
 ## Teste local
 
 ```powershell
-cd "C:\Users\bruno.haeming\Desktop\Workshop Eletomobilidade\dist"
+cd "C:\Users\ailton-junior\1-projetos\Workshop-Eletomobilidade\dist"
 python -m http.server 8000
 ```
 
@@ -20,11 +20,11 @@ http://localhost:8000/
 Execute o deploy apontando diretamente para `dist`:
 
 ```powershell
-cd "C:\Users\bruno.haeming\Desktop\Workshop Eletomobilidade"
+cd "C:\Users\ailton-junior\1-projetos\Workshop-Eletomobilidade"
 vercel dist
 ```
 
-Para produção:
+Para producao:
 
 ```powershell
 vercel dist --prod
@@ -32,9 +32,11 @@ vercel dist --prod
 
 ## Arquivos publicados
 
-- `dist/index.html`: visualização principal Empresas, com filtro NCM integrado.
-- `dist/ncm.html`: visualização auxiliar NCM x Empresas.
-- `dist/assets/data/*.json`: dados agregados carregados pela aplicação.
-- `dist/empresas_app_data/municipios/*.json`: detalhes por município carregados sob demanda.
+- `dist/index.html`: visualizacao principal Empresas, com filtro NCM integrado.
+- `dist/ncm.html`: visualizacao auxiliar NCM x Empresas.
+- `dist/componentes.html`: visualizacao da cadeia de componentes e indicadores INPI.
+- `dist/assets/data/*.json`: dados agregados carregados pela aplicacao.
+- `dist/empresas_app_data/municipios/*.json`: detalhes por municipio carregados sob demanda.
+- `dist/empresas_app_data/componentes/*.json`: empresas por componente carregadas sob demanda.
 
-Não faça deploy da raiz do projeto, pois ela contém as planilhas originais em `dados/`.
+Nao faca deploy da raiz do projeto, pois ela contem as planilhas originais em `dados/`.

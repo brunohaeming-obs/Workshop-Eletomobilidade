@@ -1,1 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Ambientes locais
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# Sistema/IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs e temporarios
+*.log
+*.tmp
+*.bak
+~$*.xlsx
+~$*.xls
+
+# Dados brutos locais muito grandes/sensiveis
 dados/empresas_rfb_2.csv
+
+# Backups gerados durante experimentacao visual
+analise_descritiva/backup_visualizacoes_componentes_*/

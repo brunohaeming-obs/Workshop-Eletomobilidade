@@ -224,6 +224,12 @@ def load_patentes_inpi_stats() -> pd.DataFrame:
         .agg(patentes=("NO_PEDIDO", "nunique"), primeiro_ano=("ano", "min"), ultimo_ano=("ano", "max"))
         .reset_index()
     )
+    pedido_ids = (
+        patentes.drop_duplicates(subset=["cnpj", "NO_PEDIDO"])
+        .groupby("cnpj", dropna=False)["NO_PEDIDO"]
+        .apply(lambda values: sorted({str(value).strip() for value in values if str(value).strip()}))
+        .reset_index(name="patent_ids")
+    )
     ipc_stats = (
         patentes.groupby(["cnpj", "ipc"], dropna=False)["NO_PEDIDO"]
         .nunique()
@@ -237,8 +243,9 @@ def load_patentes_inpi_stats() -> pd.DataFrame:
         .apply(lambda values: [value for value in values if value])
         .reset_index(name="ipc_top")
     )
-    stats = pedido_stats.merge(top_ipc, on="cnpj", how="left")
+    stats = pedido_stats.merge(top_ipc, on="cnpj", how="left").merge(pedido_ids, on="cnpj", how="left")
     stats["ipc_top"] = stats["ipc_top"].apply(lambda value: value if isinstance(value, list) else [])
+    stats["patent_ids"] = stats["patent_ids"].apply(lambda value: value if isinstance(value, list) else [])
     stats["cnpj_raiz"] = stats["cnpj"].str[:8]
     return stats
 
@@ -247,21 +254,37 @@ def attach_patent_stats(empresas: pd.DataFrame, patentes: pd.DataFrame) -> pd.Da
     empresas = empresas.copy()
     empresas["cnpj_raiz"] = empresas["nr_cnpj"].astype(str).str[:8]
     direct = patentes.set_index("cnpj")
-    root = (
+    root_patents = (
+        patentes.groupby("cnpj_raiz", dropna=False)
+        .agg(
+            patent_ids=("patent_ids", lambda values: sorted({pid for value in values if isinstance(value, list) for pid in value})),
+            primeiro_ano=("primeiro_ano", "min"),
+            ultimo_ano=("ultimo_ano", "max"),
+        )
+        .reset_index()
+    )
+    root_patents["patentes_raiz"] = root_patents["patent_ids"].apply(len)
+    root_ipc = (
         patentes.explode("ipc_top")
         .groupby("cnpj_raiz", dropna=False)
         .agg(
-            patentes_raiz=("patentes", "sum"),
-            primeiro_ano=("primeiro_ano", "min"),
-            ultimo_ano=("ultimo_ano", "max"),
             ipc_top=("ipc_top", lambda values: sorted({str(value) for value in values if str(value)})),
         )
         .reset_index()
+    )
+    root = (
+        root_patents.merge(root_ipc, on="cnpj_raiz", how="left")
         .set_index("cnpj_raiz")
     )
     empresas["patentes"] = empresas["nr_cnpj"].map(direct["patentes"]).fillna(0).astype("int64")
     empresas["patentes_raiz"] = empresas["cnpj_raiz"].map(root["patentes_raiz"]).fillna(0).astype("int64")
-    empresas["patentes_total"] = empresas[["patentes", "patentes_raiz"]].max(axis=1).astype("int64")
+    direct_ids = empresas["nr_cnpj"].map(direct["patent_ids"])
+    root_ids = empresas["cnpj_raiz"].map(root["patent_ids"])
+    empresas["patentes_ids"] = [
+        direct_value if isinstance(direct_value, list) and direct_value else (root_value if isinstance(root_value, list) else [])
+        for direct_value, root_value in zip(direct_ids, root_ids)
+    ]
+    empresas["patentes_total"] = empresas["patentes_ids"].apply(len).astype("int64")
     empresas["tem_patente"] = empresas["patentes_total"] > 0
     empresas["ipc_top"] = empresas["nr_cnpj"].map(direct["ipc_top"])
     root_ipc = empresas["cnpj_raiz"].map(root["ipc_top"])
@@ -501,6 +524,7 @@ def write_component_files(empresas: pd.DataFrame, mapped: pd.DataFrame) -> None:
         "cnae_divisao",
         "cnae_divisao_nome",
         "patentes_total",
+        "patentes_ids",
         "ipc_top",
     ]
     renamed = {
@@ -515,6 +539,7 @@ def write_component_files(empresas: pd.DataFrame, mapped: pd.DataFrame) -> None:
         "cnae_divisao": "divisao",
         "cnae_divisao_nome": "divisaoNome",
         "patentes_total": "patentes",
+        "patentes_ids": "patentIds",
         "ipc_top": "ipc",
     }
     page_size = 2000
@@ -544,6 +569,7 @@ def write_component_files(empresas: pd.DataFrame, mapped: pd.DataFrame) -> None:
         records["componentId"] = str(component_id)
         records["ncms"] = records["grupo"].map(lambda value: ncm_by_group.get(str(value), []))
         records["ipc"] = records["ipc"].apply(lambda value: value if isinstance(value, list) else [])
+        records["patentIds"] = records["patentIds"].apply(lambda value: value if isinstance(value, list) else [])
         records = records.sort_values(["patentes", "razao"], ascending=[False, True], kind="stable")
         columns = list(records.columns)
         total_rows = int(len(records))
@@ -585,13 +611,40 @@ def option_list(df: pd.DataFrame, value_col: str, label_col: str | None = None) 
     if label_col:
         labels = df[[value_col, label_col]].drop_duplicates(subset=[value_col])
         count = count.merge(labels, on=value_col, how="left")
-    count = count.sort_values(["count", value_col], ascending=[False, True])
+    if value_col == "ds_faixa_faturamento_grupo":
+        count["_sort"] = count[value_col].map(revenue_bucket_value)
+        count = count.sort_values(["_sort", value_col], ascending=[True, True])
+    else:
+        count = count.sort_values(["count", value_col], ascending=[False, True])
     out = []
     for row in count.itertuples(index=False):
         value = str(getattr(row, value_col))
         label = str(getattr(row, label_col)) if label_col else value
         out.append({"value": value, "label": label, "count": int(row.count)})
     return out
+
+
+def revenue_bucket_value(value: object) -> float:
+    label = unicodedata.normalize("NFKD", str(value)).encode("ascii", "ignore").decode("ascii").lower()
+    if not label or "nao informado" in label:
+        return float("inf")
+    matches = re.findall(r"(\d+(?:[\.,]\d+)?)\s*([kmb])?", label)
+    values = []
+    for number, unit in matches:
+        amount = float(number.replace(",", "."))
+        if unit == "k":
+            amount *= 1_000
+        elif unit == "m":
+            amount *= 1_000_000
+        elif unit == "b":
+            amount *= 1_000_000_000
+        values.append(amount)
+    if not values:
+        return float("inf")
+    value = max(values)
+    if "superior" in label:
+        value += 1
+    return value
 
 
 def count_informative_revenue(empresas: pd.DataFrame) -> int:
@@ -1001,6 +1054,8 @@ def build_componentes_payload(empresas: pd.DataFrame, municipios: gpd.GeoDataFra
                 "gt": first["gt"],
                 "subsystem": first["subsistema"],
                 "name": first["componente"],
+                "criticidade": int(first["criticidade"]) if "criticidade" in part.columns and pd.notna(first["criticidade"]) else None,
+                "complexidade": int(first["complexidade"]) if "complexidade" in part.columns and pd.notna(first["complexidade"]) else None,
                 "ncmCount": int(ncm_rows["ncm"].nunique()),
                 "cnaeCount": int(len(groups)),
                 "companies": int(len(companies)),
@@ -1157,6 +1212,23 @@ def build_componentes_payload(empresas: pd.DataFrame, municipios: gpd.GeoDataFra
     revenue_options = option_list(empresas, "ds_faixa_faturamento_grupo")
     group_options = option_list(empresas, "cnae_grupo", "cnae_grupo_nome")
     division_options = option_list(empresas, "cnae_divisao", "cnae_divisao_nome")
+    
+    # Criar opções de criticidade e complexidade
+    criticidade_values = sorted({comp["criticidade"] for comp in component_rows if comp.get("criticidade") is not None})
+    complexidade_values = sorted({comp["complexidade"] for comp in component_rows if comp.get("complexidade") is not None})
+    
+    criticidade_labels = {3: "Baixa", 4: "Média", 5: "Alta"}
+    complexidade_labels = {2: "Baixa", 3: "Média", 4: "Alta"}
+    
+    criticidade_options = [
+        {"value": str(val), "label": criticidade_labels.get(val, str(val)), "count": sum(1 for comp in component_rows if comp.get("criticidade") == val)}
+        for val in criticidade_values
+    ]
+    complexidade_options = [
+        {"value": str(val), "label": complexidade_labels.get(val, str(val)), "count": sum(1 for comp in component_rows if comp.get("complexidade") == val)}
+        for val in complexidade_values
+    ]
+    
     return {
         "summary": {
             "components": len(component_rows),
@@ -1184,6 +1256,8 @@ def build_componentes_payload(empresas: pd.DataFrame, municipios: gpd.GeoDataFra
             "revenue": revenue_options,
             "group": group_options,
             "division": division_options,
+            "criticidade": criticidade_options,
+            "complexidade": complexidade_options,
         },
     }
 
@@ -2925,6 +2999,12 @@ def write_componentes_html(payload: dict) -> None:
     .company-row small,.rank-row small { display:block; color:var(--muted); margin-top:2px; }
     .company-row strong,.rank-row strong { color:var(--cyan); }
     .company-row.patented strong:last-child { color:var(--green); }
+    .hub-legend { display:grid; gap:7px; margin:2px 0 10px; color:var(--muted); font-size:12px; }
+    .hub-legend span { display:flex; align-items:center; gap:7px; }
+    .hub-dot { width:11px; height:11px; border-radius:50%; display:inline-block; border:1px solid rgba(255,255,255,.68); }
+    .company-tools { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
+    .company-tools label { margin:0; }
+    .company-tools select { width:auto; min-height:0; padding:8px 10px; }
     .table-wrap { overflow:auto; max-height:360px; border:1px solid rgba(138,167,196,.18); border-radius:8px; }
     table { width:100%; min-width:620px; border-collapse:collapse; font-size:12px; }
     th,td { padding:7px 8px; border-bottom:1px solid rgba(138,167,196,.16); text-align:left; vertical-align:top; }
@@ -2951,6 +3031,7 @@ def write_componentes_html(payload: dict) -> None:
         <div class="stat"><strong id="statComponentes">0</strong><span>componentes</span></div>
         <div class="stat"><strong id="statNcms">0/0</strong><span>NCMs destacados</span></div>
         <div class="stat"><strong id="statLinks">0</strong><span>vinculos CNPJ-NCM</span></div>
+        <div class="stat"><strong id="statPatents">0</strong><span>patentes distintas</span></div>
       </section>
       <section class="panel">
         <label for="treeSearch">Arvore GT > Subsistema > Componente > NCM</label>
@@ -2961,8 +3042,11 @@ def write_componentes_html(payload: dict) -> None:
         <div class="grid2">
           <div><label for="ufFilter">UF</label><select id="ufFilter" multiple size="4"></select></div>
           <div><label for="revenueFilter">Faturamento</label><select id="revenueFilter" multiple size="4"></select></div>
+          <div><label for="criticidadeFilter">Criticidade</label><select id="criticidadeFilter" multiple size="4"></select></div>
+          <div><label for="complexidadeFilter">Complexidade</label><select id="complexidadeFilter" multiple size="4"></select></div>
           <div><label for="groupFilter">CNAE grupo</label><select id="groupFilter" multiple size="4"></select></div>
           <div><label for="citySearch">Municipio</label><input id="citySearch" type="search" placeholder="Buscar municipio" /></div>
+          <div><label for="minCityCompanies">Destaque mín. CNPJs</label><input id="minCityCompanies" type="number" min="0" step="1" value="0" placeholder="0" /></div>
         </div>
         <label for="cnpjSearch" style="margin-top:10px">CNPJ ou razao social</label>
         <input id="cnpjSearch" type="search" placeholder="Buscar na lista do municipio selecionado" />
@@ -2970,13 +3054,19 @@ def write_componentes_html(payload: dict) -> None:
       <section class="details"><h2>Recorte atual</h2><div id="selectionDetails"></div></section>
       <div class="tabs">
         <button class="tab active" data-view="rankingView" type="button">Ranking</button>
+        <button class="tab" data-view="hubView" type="button">Hubs</button>
         <button class="tab" data-view="matrixView" type="button">Matriz</button>
+        <button class="tab" data-view="companyRankView" type="button">Empresas</button>
+        <button class="tab" data-view="riskView" type="button">Criticidade</button>
         <button class="tab" data-view="profileView" type="button">Perfil</button>
         <button class="tab" data-view="flowsView" type="button">Fluxos</button>
       </div>
       <section class="ranking">
         <div id="rankingView" class="view active"><h2>Municipios em destaque</h2><div id="ranking"></div></div>
+        <div id="hubView" class="view"><h2>Hubs transversais</h2><div id="hubSummary"></div></div>
         <div id="matrixView" class="view"><h2>Matriz Municipio x NCM</h2><div id="matrix"></div></div>
+        <div id="companyRankView" class="view"><h2>Maiores e mais inovadoras</h2><div id="companyRanking"></div></div>
+        <div id="riskView" class="view"><h2>Complexidade x Criticidade</h2><div id="riskMatrix"></div></div>
         <div id="profileView" class="view"><h2>Perfil do municipio</h2><div id="profile"><p>Selecione um municipio no mapa ou ranking.</p></div></div>
         <div id="flowsView" class="view">
           <h2>Fluxos territoriais e cadeia</h2>
@@ -2991,7 +3081,20 @@ def write_componentes_html(payload: dict) -> None:
           <div id="flowSankey" class="chart"></div>
         </div>
       </section>
-      <section class="companies"><h2>CNPJs do municipio selecionado</h2><div id="companyList"><p class="sub">Selecione um municipio para listar CNPJs relacionados.</p></div></section>
+      <section class="companies">
+        <h2 id="companySectionTitle">Empresas do recorte atual</h2>
+        <div class="company-tools">
+          <label for="companySort" style="margin:0">Ordenar</label>
+          <select id="companySort">
+            <option value="revenue_desc">Faturamento maior</option>
+            <option value="revenue_asc">Faturamento menor</option>
+            <option value="highlight_desc">Faturamento + patentes</option>
+            <option value="patents_desc">Patentes maior</option>
+            <option value="patents_asc">Patentes menor</option>
+          </select>
+        </div>
+        <div id="companyList"><p class="sub">A lista acompanha o recorte ativo da arvore e dos filtros.</p></div>
+      </section>
     </aside>
     <div id="map"></div>
   </main>
@@ -3007,13 +3110,21 @@ def write_componentes_html(payload: dict) -> None:
     const treeSearch = document.getElementById('treeSearch');
     const ufFilter = document.getElementById('ufFilter');
     const revenueFilter = document.getElementById('revenueFilter');
+    const criticidadeFilter = document.getElementById('criticidadeFilter');
+    const complexidadeFilter = document.getElementById('complexidadeFilter');
     const groupFilter = document.getElementById('groupFilter');
     const citySearch = document.getElementById('citySearch');
+    const minCityCompanies = document.getElementById('minCityCompanies');
     const cnpjSearch = document.getElementById('cnpjSearch');
     const selectionDetails = document.getElementById('selectionDetails');
+    const companySectionTitle = document.getElementById('companySectionTitle');
     const companyList = document.getElementById('companyList');
+    const companySort = document.getElementById('companySort');
     const ranking = document.getElementById('ranking');
+    const hubSummary = document.getElementById('hubSummary');
+    const companyRanking = document.getElementById('companyRanking');
     const matrix = document.getElementById('matrix');
+    const riskMatrix = document.getElementById('riskMatrix');
     const profile = document.getElementById('profile');
     const flowMode = document.getElementById('flowMode');
     const flowMapEl = document.getElementById('flowMap');
@@ -3023,6 +3134,7 @@ def write_componentes_html(payload: dict) -> None:
     const statComponentes = document.getElementById('statComponentes');
     const statNcms = document.getElementById('statNcms');
     const statLinks = document.getElementById('statLinks');
+    const statPatents = document.getElementById('statPatents');
     const componentsById = Object.fromEntries(DATA.components.map(item => [item.id, item]));
     const pointsByCode = Object.fromEntries(DATA.points.map(point => [point.code, point]));
     const detailCache = {};
@@ -3031,6 +3143,7 @@ def write_componentes_html(payload: dict) -> None:
     let currentRows = [];
     let currentState = null;
     let updateSeq = 0;
+    let activeMapMode = 'territory';
     let lastFlowStats = { componentStats:new Map(), subsystemStats:new Map(), gtStats:new Map(), cityComponent:new Map(), citySubsystem:new Map(), cityGt:new Map() };
     let flowMapChart = null;
     let flowSankeyChart = null;
@@ -3118,13 +3231,107 @@ def write_componentes_html(payload: dict) -> None:
         });
       }
     }).addTo(map);
+    const cityCircleLayer = L.layerGroup().addTo(map);
+    const hubLayer = L.layerGroup().addTo(map);
     function updateMap(rows) {
+      if (activeMapMode === 'hubs') {
+        cityCircleLayer.clearLayers();
+        renderHubMapLayer(rows);
+        return;
+      }
+      cityCircleLayer.clearLayers();
+      hubLayer.clearLayers();
       currentByCity = Object.fromEntries(rows.map(row => [row.code, row]));
       const max = Math.max(1, ...rows.map(row => row.n));
       polygonLayer.eachLayer(layer => {
         const code = String(layer.feature.properties.code);
         const row = currentByCity[code];
-        layer.setStyle({ fillColor: color(row?.n || 0, max), fillOpacity: row ? .78 : .22, weight: row ? 1 : .5 });
+        layer.setStyle({ color:row ? '#31577c' : '#24486c', fillColor:'#102a46', fillOpacity: row ? .22 : .08, weight: row ? .55 : .3 });
+      });
+      rows.forEach(row => {
+        const point = pointsByCode[row.code];
+        if (!point) return;
+        const radius = Math.max(4, Math.min(24, 4 + 20 * Math.sqrt(row.n / max)));
+        const marker = L.circleMarker([point.lat, point.lon], {
+          radius,
+          color: row.patents > 0 ? '#dff6ff' : '#1e3c5e',
+          weight: row.patents > 0 ? 1.6 : 1,
+          fillColor: color(row.n, max),
+          fillOpacity: .88,
+        }).bindTooltip(`${point.name}/${point.uf} | ${br.format(row.n)} CNPJs`, { sticky:true });
+        marker.on('click', () => {
+          activeCityCode = row.code;
+          marker.bindPopup(`<strong>${escapeHtml(point.name)}/${escapeHtml(point.uf)}</strong><br>${br.format(row.n)} CNPJs únicos na cadeia<br>${br.format(row.ncms.length)} NCMs | ${br.format(row.links || 0)} vínculos`).openPopup();
+          renderProfile();
+          renderCompanies();
+        });
+        marker.addTo(cityCircleLayer);
+      });
+    }
+    function hubColor(gtCount) {
+      if (gtCount >= 3) return '#ffd166';
+      if (gtCount === 2) return '#63d7ff';
+      return '#8aa7c4';
+    }
+    function gtCountFor(row) {
+      return Object.keys(row.gtCounts || {}).filter(gt => Number(row.gtCounts[gt] || 0) > 0).length;
+    }
+    function hubPopupHtml(row, companies = null) {
+      const point = pointsByCode[row.code] || {};
+      const gtEntries = Object.entries(row.gtCounts || {}).filter(([, value]) => Number(value || 0) > 0);
+      const companyHtml = companies === null
+        ? '<small>Buscando empresas de destaque...</small>'
+        : (companies.length
+          ? companies.map(company => `<small>${escapeHtml(company.razao)} | ${escapeHtml(company.faturamento || 'Nao informado')} | ${br.format(Number(company.patentes || 0))} pat.</small>`).join('')
+          : '<small>Sem empresas identificadas para o recorte.</small>');
+      return `<strong>${escapeHtml(point.name || row.code)}/${escapeHtml(point.uf || '')}</strong><br>${br.format(row.n)} CNPJs unicos | ${br.format(gtCountFor(row))} GTs<br>${gtEntries.map(([gt, value]) => `${escapeHtml(gt)}: ${br.format(value)}`).join('<br>')}<hr style="border-color:#1d3958;border-width:0 0 1px;margin:8px 0">${companyHtml}`;
+    }
+    async function topCompaniesForCity(code, limit = 3) {
+      if (!currentState) return [];
+      const payloads = await Promise.all([...currentState.chain.componentIds].map(id => loadComponentCompanies(id).catch(() => ({ rows:[] }))));
+      const seen = new Map();
+      payloads.flatMap(payload => payload.rows).forEach(row => {
+        if (String(row.municipioCodigo) !== String(code)) return;
+        if (!companyPassesGlobal(row, currentState)) return;
+        const rowNcms = Array.isArray(row.ncms) ? row.ncms.map(String).filter(ncm => currentState.chain.ncmSet.has(ncm)) : [];
+        if (!rowNcms.length) return;
+        const key = String(row.cnpj);
+        if (!seen.has(key)) {
+          seen.set(key, { ...row, ncms:new Set(rowNcms), componentes:new Set([row.componente]), patentIds:new Set(patentIdsFor(row)) });
+        } else {
+          const existing = seen.get(key);
+          rowNcms.forEach(ncm => existing.ncms.add(ncm));
+          existing.componentes.add(row.componente);
+          patentIdsFor(row).forEach(id => existing.patentIds.add(id));
+        }
+      });
+      return [...seen.values()].map(row => ({ ...row, ncms:[...row.ncms], componente:[...row.componentes].join('; '), patentIds:[...row.patentIds], patentes:row.patentIds.size })).sort(compareCompanies).slice(0, limit);
+    }
+    function renderHubMapLayer(rows) {
+      currentByCity = Object.fromEntries(rows.map(row => [row.code, row]));
+      hubLayer.clearLayers();
+      polygonLayer.eachLayer(layer => layer.setStyle({ color:'#24486c', weight:.35, fillColor:'#102a46', fillOpacity:.15 }));
+      const max = Math.max(1, ...rows.map(row => row.n));
+      rows.forEach(row => {
+        const point = pointsByCode[row.code];
+        if (!point) return;
+        const gtCount = gtCountFor(row);
+        const radius = Math.max(5, Math.min(28, 5 + 23 * Math.sqrt(row.n / max)));
+        const marker = L.circleMarker([point.lat, point.lon], {
+          radius,
+          color: row.patents > 0 ? '#ffffff' : '#0b1728',
+          weight: row.patents > 0 ? 2 : 1,
+          fillColor: hubColor(gtCount),
+          fillOpacity: .86,
+        }).bindTooltip(`${point.name}/${point.uf} | ${br.format(row.n)} CNPJs | ${br.format(gtCount)} GTs`, { sticky:true });
+        marker.on('click', () => {
+          activeCityCode = row.code;
+          marker.bindPopup(hubPopupHtml(row)).openPopup();
+          renderProfile();
+          renderCompanies();
+          topCompaniesForCity(row.code, 3).then(companies => marker.setPopupContent(hubPopupHtml(row, companies)));
+        });
+        marker.addTo(hubLayer);
       });
     }
     function componentNcmKey(row) {
@@ -3134,11 +3341,24 @@ def write_componentes_html(payload: dict) -> None:
       const chain = deriveChainSelection();
       const ufs = selectedValues(ufFilter);
       const revenues = selectedValues(revenueFilter);
+      const criticidades = selectedValues(criticidadeFilter);
+      const complexidades = selectedValues(complexidadeFilter);
       const groups = selectedValues(groupFilter);
       const cityTerm = normalizeText(citySearch.value);
+      const minCity = Math.max(0, Number(minCityCompanies.value || 0));
+      if (criticidades.size || complexidades.size) {
+        chain.components = chain.components.filter(item =>
+          (!criticidades.size || criticidades.has(String(item.criticidade)))
+          && (!complexidades.size || complexidades.has(String(item.complexidade)))
+        );
+        chain.componentIds = new Set(chain.components.map(item => item.id));
+        chain.allNcmSet = new Set(chain.components.flatMap(item => item.ncms.map(ncm => String(ncm.code))));
+        chain.ncmPairs = chain.ncmPairs.filter(item => chain.componentIds.has(item.component));
+        chain.ncmSet = new Set(chain.ncmPairs.map(item => String(item.ncm)));
+      }
       const allowedPairs = new Set(chain.ncmPairs.map(componentNcmKey));
       const activeGroups = new Set(DATA.componentMappings.filter(item => chain.componentIds.has(item.component) && chain.ncmSet.has(String(item.ncm))).map(item => String(item.group)));
-      return { chain, ufs, revenues, groups, cityTerm, allowedPairs, activeGroups };
+      return { chain, ufs, revenues, criticidades, complexidades, groups, cityTerm, minCity, allowedPairs, activeGroups };
     }
     function computeRows(state) {
       const byCity = new Map();
@@ -3161,13 +3381,60 @@ def write_componentes_html(payload: dict) -> None:
       });
       return [...byCity.values()].map(row => ({ ...row, n:row.cnpjs, ncms:[...row.ncms], components:[...row.components] })).sort((a,b) => b.n - a.n);
     }
+    function patentIdsFor(row) {
+      return Array.isArray(row.patentIds) ? row.patentIds.map(String).filter(Boolean) : [];
+    }
+    function revenueRank(value) {
+      const label = normalizeText(value);
+      if (!label || label.includes('nao informado')) return null;
+      const values = [...label.matchAll(/(\\d+(?:[\\.,]\\d+)?)\\s*([kmb])?/g)].map(match => {
+        let amount = Number(match[1].replace(',', '.'));
+        if (match[2] === 'k') amount *= 1_000;
+        if (match[2] === 'm') amount *= 1_000_000;
+        if (match[2] === 'b') amount *= 1_000_000_000;
+        return amount;
+      });
+      if (!values.length) return null;
+      const bucketValue = Math.max(...values);
+      return label.includes('superior') ? bucketValue + 1 : bucketValue;
+    }
+    function compareRevenue(a, b, direction = 'desc') {
+      const revenueA = revenueRank(a.faturamento);
+      const revenueB = revenueRank(b.faturamento);
+      if (revenueA === null && revenueB === null) return 0;
+      if (revenueA === null) return 1;
+      if (revenueB === null) return -1;
+      return direction === 'asc' ? revenueA - revenueB : revenueB - revenueA;
+    }
+    function compareCompanies(a, b) {
+      const mode = companySort.value;
+      const patentsA = Number(a.patentes || 0);
+      const patentsB = Number(b.patentes || 0);
+      const revenueDiffDesc = compareRevenue(a, b, 'desc');
+      const revenueDiffAsc = compareRevenue(a, b, 'asc');
+      if (mode === 'highlight_desc') {
+        if (revenueDiffDesc !== 0) return revenueDiffDesc;
+        if (patentsA !== patentsB) return patentsB - patentsA;
+      }
+      if (mode === 'patents_desc' && patentsA !== patentsB) return patentsB - patentsA;
+      if (mode === 'patents_asc' && patentsA !== patentsB) return patentsA - patentsB;
+      if (mode === 'revenue_asc' && revenueDiffAsc !== 0) return revenueDiffAsc;
+      if (mode === 'revenue_desc' && revenueDiffDesc !== 0) return revenueDiffDesc;
+      if (mode.startsWith('patents') && revenueDiffDesc !== 0) return revenueDiffDesc;
+      if (patentsA !== patentsB) return patentsB - patentsA;
+      return String(a.razao).localeCompare(String(b.razao), 'pt-BR');
+    }
     function renderDetails(state, rows) {
       const total = rows.reduce((sum, row) => sum + row.n, 0);
       const links = rows.reduce((sum, row) => sum + (row.links || 0), 0);
+      const patents = rows.reduce((all, row) => {
+        (row.patentIds || []).forEach(id => all.add(String(id)));
+        return all;
+      }, new Set()).size;
       selectionDetails.innerHTML = `
         <p><strong>${br.format(state.chain.components.length)}</strong> componentes, <strong>${br.format(state.chain.ncmSet.size)}/${br.format(state.chain.allNcmSet.size)}</strong> NCMs destacados e <strong>${br.format(state.activeGroups.size)}</strong> grupos CNAE relacionados.</p>
         <p>${state.chain.components.length === DATA.components.length ? 'Sem seleção: considerando todos os GTs, subsistemas, componentes e NCMs mapeados.' : 'Seleção ativa: considerando apenas os itens marcados na árvore.'}</p>
-        <p><strong>${br.format(total)}</strong> CNPJs unicos na cadeia e <strong>${br.format(links)}</strong> vinculos CNPJ-NCM no recorte.</p>
+        <p><strong>${br.format(total)}</strong> CNPJs unicos na cadeia, <strong>${br.format(links)}</strong> vinculos CNPJ-NCM e <strong>${br.format(patents)}</strong> patentes distintas no recorte.</p>
         <p>O vinculo CNPJ-NCM usa o CNAE da empresa e o de-para do NCM destacado.</p>
         <div class="chips">${[...state.chain.ncmSet].slice(0, 14).map(ncm => `<span class="chip">${escapeHtml(ncm)}</span>`).join('') || '<span class="chip">Todos os NCMs da cadeia</span>'}</div>`;
       statEmpresas.textContent = br.format(total);
@@ -3175,6 +3442,7 @@ def write_componentes_html(payload: dict) -> None:
       statComponentes.textContent = br.format(state.chain.components.length);
       statNcms.textContent = `${br.format(state.chain.ncmSet.size)}/${br.format(state.chain.allNcmSet.size)}`;
       statLinks.textContent = br.format(links);
+      statPatents.textContent = br.format(patents);
     }
     async function loadComponentCompanies(componentId) {
       if (!detailCache[componentId]) {
@@ -3210,15 +3478,36 @@ def write_componentes_html(payload: dict) -> None:
         const rowNcms = row.ncms.filter(ncm => currentState.chain.ncmSet.has(String(ncm)));
         const key = String(row.cnpj);
         if (!seen.has(key)) {
-          seen.set(key, { ...row, ncms:new Set(rowNcms), componentes:new Set([row.componente]) });
+          seen.set(key, { ...row, ncms:new Set(rowNcms), componentes:new Set([row.componente]), patentIds:new Set(patentIdsFor(row)) });
         } else {
           const existing = seen.get(key);
           rowNcms.forEach(ncm => existing.ncms.add(ncm));
           existing.componentes.add(row.componente);
-          existing.patentes = Math.max(Number(existing.patentes || 0), Number(row.patentes || 0));
+          patentIdsFor(row).forEach(id => existing.patentIds.add(id));
+          existing.patentes = Math.max(existing.patentIds.size, Number(existing.patentes || 0), Number(row.patentes || 0));
         }
       });
-      return [...seen.values()].map(row => ({ ...row, ncms:[...row.ncms], componente:[...row.componentes].join('; ') })).sort((a,b) => Number(b.patentes || 0) - Number(a.patentes || 0) || String(a.razao).localeCompare(String(b.razao))).slice(0, limit);
+      return [...seen.values()].map(row => ({ ...row, ncms:[...row.ncms], componente:[...row.componentes].join('; '), patentIds:[...row.patentIds], patentes:row.patentIds.size })).sort(compareCompanies).slice(0, limit);
+    }
+    async function filteredCompaniesForCurrentSelection(limit = 80) {
+      if (!currentState) return [];
+      const payloads = await Promise.all([...currentState.chain.componentIds].map(id => loadComponentCompanies(id).catch(() => ({ rows:[] }))));
+      const seen = new Map();
+      payloads.flatMap(payload => payload.rows).forEach(row => {
+        if (!companyPassesGlobal(row, currentState)) return;
+        const rowNcms = Array.isArray(row.ncms) ? row.ncms.map(String).filter(ncm => currentState.chain.ncmSet.has(ncm)) : [];
+        if (!rowNcms.length) return;
+        const key = String(row.cnpj);
+        if (!seen.has(key)) {
+          seen.set(key, { ...row, ncms:new Set(rowNcms), componentes:new Set([row.componente]), patentIds:new Set(patentIdsFor(row)) });
+        } else {
+          const existing = seen.get(key);
+          rowNcms.forEach(ncm => existing.ncms.add(ncm));
+          existing.componentes.add(row.componente);
+          patentIdsFor(row).forEach(id => existing.patentIds.add(id));
+        }
+      });
+      return [...seen.values()].map(row => ({ ...row, ncms:[...row.ncms], componente:[...row.componentes].join('; '), patentIds:[...row.patentIds], patentes:row.patentIds.size })).sort(compareCompanies).slice(0, limit);
     }
     async function refineRowsByCompanySearch(state) {
       const term = normalizeText(cnpjSearch.value);
@@ -3239,16 +3528,17 @@ def write_componentes_html(payload: dict) -> None:
         if (seen.has(key)) return;
         seen.add(key);
         const code = String(row.municipioCodigo);
-        if (!byCity.has(code)) byCity.set(code, { code, n:0, cnpjs:0, patented:0, patents:0, ncms:new Set(), components:new Set() });
+        if (!byCity.has(code)) byCity.set(code, { code, n:0, cnpjs:0, patented:0, patents:0, patentIds:new Set(), ncms:new Set(), components:new Set() });
         const out = byCity.get(code);
         out.n += 1;
         out.cnpjs += 1;
         out.patented += Number(row.patentes || 0) > 0 ? 1 : 0;
-        out.patents += Number(row.patentes || 0);
+        patentIdsFor(row).forEach(id => out.patentIds.add(id));
+        out.patents = out.patentIds.size;
         rowNcms.forEach(ncm => out.ncms.add(ncm));
         out.components.add(String(row.componentId));
       });
-      return [...byCity.values()].map(row => ({ ...row, ncms:[...row.ncms], components:[...row.components] })).sort((a,b) => b.n - a.n);
+      return [...byCity.values()].map(row => ({ ...row, patentIds:[...row.patentIds], ncms:[...row.ncms], components:[...row.components] })).sort((a,b) => b.n - a.n);
     }
     async function computeExactRowsFromCompanies(state) {
       const payloads = await Promise.all([...state.chain.componentIds].map(id => loadComponentCompanies(id).catch(() => ({ rows:[] }))));
@@ -3260,12 +3550,13 @@ def write_componentes_html(payload: dict) -> None:
       const citySubsystem = new Map();
       const cityGt = new Map();
       function ensureStat(map, key, meta = {}) {
-        if (!map.has(key)) map.set(key, { key, cnpjs:new Set(), links:new Set(), ...meta });
+        if (!map.has(key)) map.set(key, { key, cnpjs:new Set(), links:new Set(), patentIds:new Set(), ...meta });
         return map.get(key);
       }
-      function addToStat(stat, cnpj, linkKey) {
+      function addToStat(stat, cnpj, linkKey, patentIds) {
         stat.cnpjs.add(cnpj);
         stat.links.add(linkKey);
+        patentIds.forEach(id => stat.patentIds.add(id));
       }
       payloads.flatMap(payload => payload.rows).forEach(row => {
         if (!companyPassesGlobal(row, state)) return;
@@ -3274,12 +3565,15 @@ def write_componentes_html(payload: dict) -> None:
         const component = componentsById[String(row.componentId)];
         if (!component) return;
         const code = String(row.municipioCodigo);
-        if (!byCity.has(code)) byCity.set(code, { code, cnpjs:new Set(), links:new Set(), patented:new Set(), patents:0, ncms:new Set(), components:new Set(), ncmCnpjs:new Map() });
+        const patentIds = patentIdsFor(row);
+        if (!byCity.has(code)) byCity.set(code, { code, cnpjs:new Set(), links:new Set(), patented:new Set(), patentIds:new Set(), ncms:new Set(), components:new Set(), ncmCnpjs:new Map(), gtCnpjs:new Map() });
         const out = byCity.get(code);
         const cnpj = String(row.cnpj);
         out.cnpjs.add(cnpj);
+        if (!out.gtCnpjs.has(component.gt)) out.gtCnpjs.set(component.gt, new Set());
+        out.gtCnpjs.get(component.gt).add(cnpj);
         if (Number(row.patentes || 0) > 0) out.patented.add(String(row.cnpj));
-        out.patents += Number(row.patentes || 0);
+        patentIds.forEach(id => out.patentIds.add(id));
         out.components.add(String(row.componentId));
         rowNcms.forEach(ncm => {
           const linkKey = `${cnpj}||${row.componentId}||${ncm}`;
@@ -3287,12 +3581,12 @@ def write_componentes_html(payload: dict) -> None:
           out.links.add(linkKey);
           if (!out.ncmCnpjs.has(ncm)) out.ncmCnpjs.set(ncm, new Set());
           out.ncmCnpjs.get(ncm).add(cnpj);
-          addToStat(ensureStat(componentStats, component.id, { component }), cnpj, linkKey);
-          addToStat(ensureStat(subsystemStats, `${component.gt}||${component.subsystem}`, { gt:component.gt, subsystem:component.subsystem }), cnpj, linkKey);
-          addToStat(ensureStat(gtStats, component.gt, { gt:component.gt }), cnpj, linkKey);
-          addToStat(ensureStat(cityComponent, `${code}||${component.id}`, { code, component }), cnpj, linkKey);
-          addToStat(ensureStat(citySubsystem, `${code}||${component.gt}||${component.subsystem}`, { code, gt:component.gt, subsystem:component.subsystem }), cnpj, linkKey);
-          addToStat(ensureStat(cityGt, `${code}||${component.gt}`, { code, gt:component.gt }), cnpj, linkKey);
+          addToStat(ensureStat(componentStats, component.id, { component }), cnpj, linkKey, patentIds);
+          addToStat(ensureStat(subsystemStats, `${component.gt}||${component.subsystem}`, { gt:component.gt, subsystem:component.subsystem }), cnpj, linkKey, patentIds);
+          addToStat(ensureStat(gtStats, component.gt, { gt:component.gt }), cnpj, linkKey, patentIds);
+          addToStat(ensureStat(cityComponent, `${code}||${component.id}`, { code, component }), cnpj, linkKey, patentIds);
+          addToStat(ensureStat(citySubsystem, `${code}||${component.gt}||${component.subsystem}`, { code, gt:component.gt, subsystem:component.subsystem }), cnpj, linkKey, patentIds);
+          addToStat(ensureStat(cityGt, `${code}||${component.gt}`, { code, gt:component.gt }), cnpj, linkKey, patentIds);
         });
       });
       lastFlowStats = { componentStats, subsystemStats, gtStats, cityComponent, citySubsystem, cityGt };
@@ -3302,24 +3596,43 @@ def write_componentes_html(payload: dict) -> None:
         cnpjs:row.cnpjs.size,
         links:row.links.size,
         patented:row.patented.size,
-        patents:row.patents,
+        patents:row.patentIds.size,
+        patentIds:[...row.patentIds],
         ncms:[...row.ncms],
         components:[...row.components],
+        gtCounts:Object.fromEntries([...row.gtCnpjs.entries()].map(([gt, cnpjs]) => [gt, cnpjs.size])),
         ncmCounts:Object.fromEntries([...row.ncmCnpjs.entries()].map(([ncm, cnpjs]) => [ncm, cnpjs.size])),
       })).sort((a,b) => b.n - a.n);
     }
     async function renderCompanies() {
-      if (!activeCityCode) {
-        companyList.innerHTML = '<p class="sub">Selecione um municipio no mapa ou ranking para listar CNPJs.</p>';
-        return;
-      }
-      companyList.innerHTML = '<p class="sub">Carregando CNPJs do municipio...</p>';
-      const rows = await filteredCompaniesForActiveCity();
+      const cityPoint = activeCityCode ? pointsByCode[activeCityCode] : null;
+      companySectionTitle.textContent = cityPoint
+        ? `Empresas em ${cityPoint.name}/${cityPoint.uf}`
+        : 'Empresas do recorte atual';
+      companyList.innerHTML = cityPoint
+        ? '<p class="sub">Classificando empresas do municipio selecionado...</p>'
+        : '<p class="sub">Classificando empresas do recorte ativo...</p>';
+      const rows = cityPoint
+        ? await filteredCompaniesForActiveCity()
+        : await filteredCompaniesForCurrentSelection(300);
       companyList.innerHTML = rows.length ? rows.map(row => `
         <div class="company-row ${Number(row.patentes || 0) > 0 ? 'patented' : ''}">
-          <div><strong>${escapeHtml(row.razao)}</strong><small>${escapeHtml(row.cnpj)} - ${escapeHtml(row.municipio)}/${escapeHtml(row.uf)}</small><small>${escapeHtml(row.gt)} > ${escapeHtml(row.subsistema)} > ${escapeHtml(row.componente)}</small><small>NCM ${escapeHtml(row.ncms.join(', '))} | CNAE ${escapeHtml(row.grupo)} - ${escapeHtml(row.grupoNome)}</small></div>
-          <strong>${br.format(Number(row.patentes || 0))}</strong>
+          <div><strong>${escapeHtml(row.razao)}</strong><small>${escapeHtml(row.cnpj)} - ${escapeHtml(row.municipio)}/${escapeHtml(row.uf)}</small><small>${escapeHtml(row.gt)} > ${escapeHtml(row.subsistema)} > ${escapeHtml(row.componente)}</small><small>NCM ${escapeHtml(row.ncms.join(', '))} | CNAE ${escapeHtml(row.grupo)} - ${escapeHtml(row.grupoNome)}</small><small>Faturamento: ${escapeHtml(row.faturamento || 'NÃ£o informado')}</small></div>
+          <strong>${br.format(Number(row.patentes || 0))} pat.</strong>
         </div>`).join('') : '<p class="sub">Nenhuma empresa para o filtro atual.</p>';
+    }
+    async function renderCompanyRanking() {
+      if (!currentState) {
+        companyRanking.innerHTML = '<p class="sub">Carregando ranking de empresas...</p>';
+        return;
+      }
+      companyRanking.innerHTML = '<p class="sub">Classificando empresas do recorte...</p>';
+      const rows = await filteredCompaniesForCurrentSelection();
+      companyRanking.innerHTML = rows.length ? rows.map((row, index) => `
+        <div class="company-row ${Number(row.patentes || 0) > 0 ? 'patented' : ''}">
+          <div><strong>${br.format(index + 1)}. ${escapeHtml(row.razao)}</strong><small>${escapeHtml(row.cnpj)} - ${escapeHtml(row.municipio)}/${escapeHtml(row.uf)}</small><small>${escapeHtml(row.gt)} > ${escapeHtml(row.subsistema)} > ${escapeHtml(row.componente)}</small><small>Faturamento: ${escapeHtml(row.faturamento || 'NÃ£o informado')} | Patentes: ${br.format(Number(row.patentes || 0))}</small></div>
+          <strong>${br.format(Number(row.patentes || 0))} pat.</strong>
+        </div>`).join('') : '<p class="sub">Nenhuma empresa para o recorte atual.</p>';
     }
     function renderRanking(rows) {
       ranking.innerHTML = rows.slice(0, 10).map(row => {
@@ -3328,6 +3641,33 @@ def write_componentes_html(payload: dict) -> None:
       }).join('') || '<p class="sub">Sem municipios relacionados.</p>';
       ranking.querySelectorAll('.rank-row').forEach(row => row.addEventListener('click', () => {
         activeCityCode = row.dataset.code;
+        renderProfile();
+        renderCompanies();
+      }));
+    }
+    function renderHubs(rows) {
+      const hubs = rows
+        .map(row => ({ ...row, gtCount:gtCountFor(row) }))
+        .sort((a,b) => b.gtCount - a.gtCount || b.n - a.n)
+        .slice(0, 12);
+      const transversal = rows.filter(row => gtCountFor(row) >= 3).length;
+      const adjacent = rows.filter(row => gtCountFor(row) === 2).length;
+      hubSummary.innerHTML = `
+        <div class="hub-legend">
+          <span><i class="hub-dot" style="background:#ffd166"></i>3 GTs: hub transversal</span>
+          <span><i class="hub-dot" style="background:#63d7ff"></i>2 GTs: capacidade adjacente</span>
+          <span><i class="hub-dot" style="background:#8aa7c4"></i>1 GT: especializacao localizada</span>
+        </div>
+        <p class="sub">${br.format(transversal)} municipios aparecem nos 3 GTs e ${br.format(adjacent)} aparecem em 2 GTs no recorte atual. O tamanho das bolhas representa CNPJs unicos; borda clara indica patentes.</p>
+        ${hubs.map(row => {
+          const point = pointsByCode[row.code] || {};
+          const gtLabel = Object.entries(row.gtCounts || {}).filter(([, value]) => Number(value || 0) > 0).map(([gt, value]) => `${(gt.match(/GT\\s*\\d+/) || [gt])[0]}: ${br.format(value)}`).join(' | ');
+          return `<div class="rank-row" data-code="${escapeHtml(row.code)}"><span>${escapeHtml(point.name || row.code)}<small>${escapeHtml(point.uf || '')} | ${br.format(row.gtCount)} GTs | ${gtLabel}</small></span><strong>${br.format(row.n)}</strong></div>`;
+        }).join('') || '<p class="sub">Sem hubs para o recorte atual.</p>'}`;
+      hubSummary.querySelectorAll('.rank-row').forEach(row => row.addEventListener('click', () => {
+        activeCityCode = row.dataset.code;
+        activeMapMode = 'hubs';
+        updateMap(currentRows);
         renderProfile();
         renderCompanies();
       }));
@@ -3344,6 +3684,25 @@ def write_componentes_html(payload: dict) -> None:
       }).join('');
       matrix.innerHTML = ncms.length ? `<div class="table-wrap"><table><thead><tr><th>Municipio</th>${ncms.map(ncm => `<th>${escapeHtml(ncm)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>` : '<p class="sub">Sem NCMs no recorte.</p>';
     }
+    function renderRiskMatrix() {
+      const byComponent = new Map();
+      for (const stat of lastFlowStats.componentStats.values()) {
+        const component = stat.component;
+        if (!component) return;
+        const key = `${component.complexidade ?? 'NA'}||${component.criticidade ?? 'NA'}`;
+        if (!byComponent.has(key)) byComponent.set(key, { complexity:component.complexidade ?? 'NA', criticality:component.criticidade ?? 'NA', components:new Set(), cnpjs:0, patents:0 });
+        const cell = byComponent.get(key);
+        cell.components.add(component.id);
+        cell.cnpjs += stat.cnpjs.size;
+        cell.patents += stat.patentIds.size;
+      }
+      const cells = [...byComponent.values()].sort((a,b) => String(b.criticality).localeCompare(String(a.criticality)) || String(b.complexity).localeCompare(String(a.complexity)));
+      riskMatrix.innerHTML = cells.length ? `
+        <div class="table-wrap"><table>
+          <thead><tr><th>Complexidade</th><th>Criticidade</th><th>Componentes</th><th>CNPJs no recorte</th><th>Patentes distintas</th></tr></thead>
+          <tbody>${cells.map(cell => `<tr><td>${escapeHtml(cell.complexity)}</td><td>${escapeHtml(cell.criticality)}</td><td class="num">${br.format(cell.components.size)}</td><td class="num">${br.format(cell.cnpjs)}</td><td class="num">${br.format(cell.patents)}</td></tr>`).join('')}</tbody>
+        </table></div>` : '<p class="sub">Sem componentes com complexidade e criticidade no recorte.</p>';
+    }
     function renderProfile() {
       if (!activeCityCode) {
         profile.innerHTML = '<p>Selecione um municipio no mapa ou ranking.</p>';
@@ -3358,7 +3717,7 @@ def write_componentes_html(payload: dict) -> None:
       const components = city.components.map(id => componentsById[id]).filter(Boolean);
       const gtCounts = new Map();
       components.forEach(item => gtCounts.set(item.gt, (gtCounts.get(item.gt) || 0) + 1));
-      profile.innerHTML = `<p><strong>${escapeHtml(point.name || activeCityCode)}/${escapeHtml(point.uf || '')}</strong></p><p>${br.format(city.n)} CNPJs unicos, ${br.format(city.links || 0)} vinculos, ${br.format(city.components.length)} componentes e ${br.format(city.ncms.length)} NCMs destacados.</p><div class="chips">${[...gtCounts.entries()].map(([gt,count]) => `<span class="chip">${escapeHtml(gt)}: ${br.format(count)}</span>`).join('')}</div><div class="chips">${city.ncms.slice(0, 18).map(ncm => `<span class="chip">${escapeHtml(ncm)}</span>`).join('')}</div>`;
+      profile.innerHTML = `<p><strong>${escapeHtml(point.name || activeCityCode)}/${escapeHtml(point.uf || '')}</strong></p><p>${br.format(city.n)} CNPJs unicos, ${br.format(city.links || 0)} vinculos, ${br.format(city.patents || 0)} patentes distintas, ${br.format(city.components.length)} componentes e ${br.format(city.ncms.length)} NCMs destacados.</p><div class="chips">${[...gtCounts.entries()].map(([gt,count]) => `<span class="chip">${escapeHtml(gt)}: ${br.format(count)}</span>`).join('')}</div><div class="chips">${city.ncms.slice(0, 18).map(ncm => `<span class="chip">${escapeHtml(ncm)}</span>`).join('')}</div>`;
     }
     function initFlowCharts() {
       if (!window.echarts || flowMapChart) return;
@@ -3367,7 +3726,7 @@ def write_componentes_html(payload: dict) -> None:
       flowSankeyChart = echarts.init(flowSankeyEl);
     }
     function statValue(stat) {
-      return { cnpjs: stat?.cnpjs?.size || 0, links: stat?.links?.size || 0 };
+      return { cnpjs: stat?.cnpjs?.size || 0, links: stat?.links?.size || 0, patents: stat?.patentIds?.size || 0 };
     }
     function topCityFor(map, predicate) {
       let best = null;
@@ -3382,23 +3741,23 @@ def write_componentes_html(payload: dict) -> None:
       if (!flowSankeyChart) return;
       const nodes = new Map();
       const links = [];
-      function addNode(name, depth, value) {
-        if (!nodes.has(name)) nodes.set(name, { name, depth, value });
+      function addNode(name, depth, value, patents = 0) {
+        if (!nodes.has(name)) nodes.set(name, { name, depth, value, patents });
       }
       for (const stat of lastFlowStats.componentStats.values()) {
         const component = stat.component;
         const componentName = `Componente | ${component.name}`;
         const subsystemName = `Subsistema | ${component.gt} | ${component.subsystem}`;
         const gtName = `GT | ${component.gt}`;
-        addNode(componentName, 0, stat.cnpjs.size);
-        addNode(subsystemName, 1, statValue(lastFlowStats.subsystemStats.get(`${component.gt}||${component.subsystem}`)).cnpjs);
-        addNode(gtName, 2, statValue(lastFlowStats.gtStats.get(component.gt)).cnpjs);
-        links.push({ source:componentName, target:subsystemName, value:Math.max(1, stat.cnpjs.size), links:stat.links.size });
+        addNode(componentName, 0, stat.cnpjs.size, stat.patentIds.size);
+        addNode(subsystemName, 1, statValue(lastFlowStats.subsystemStats.get(`${component.gt}||${component.subsystem}`)).cnpjs, statValue(lastFlowStats.subsystemStats.get(`${component.gt}||${component.subsystem}`)).patents);
+        addNode(gtName, 2, statValue(lastFlowStats.gtStats.get(component.gt)).cnpjs, statValue(lastFlowStats.gtStats.get(component.gt)).patents);
+        links.push({ source:componentName, target:subsystemName, value:Math.max(1, stat.cnpjs.size), links:stat.links.size, patents:stat.patentIds.size });
       }
       for (const stat of lastFlowStats.subsystemStats.values()) {
         const subsystemName = `Subsistema | ${stat.gt} | ${stat.subsystem}`;
         const gtName = `GT | ${stat.gt}`;
-        links.push({ source:subsystemName, target:gtName, value:Math.max(1, stat.cnpjs.size), links:stat.links.size });
+        links.push({ source:subsystemName, target:gtName, value:Math.max(1, stat.cnpjs.size), links:stat.links.size, patents:stat.patentIds.size });
       }
       flowSankeyChart.setOption({
         backgroundColor:'#081522',
@@ -3516,21 +3875,26 @@ def write_componentes_html(payload: dict) -> None:
       currentState = currentFilterState();
       currentRows = computeRows(currentState);
       currentRows = await computeExactRowsFromCompanies(currentState);
+      if (currentState.minCity > 0) currentRows = currentRows.filter(row => Number(row.n || 0) >= currentState.minCity);
       if (seq !== updateSeq) return;
       if (activeCityCode && !currentRows.some(row => row.code === activeCityCode)) activeCityCode = null;
       renderDetails(currentState, currentRows);
       renderRanking(currentRows);
+      renderHubs(currentRows);
       renderMatrix(currentRows);
+      renderRiskMatrix();
       renderProfile();
       updateMap(currentRows);
       renderFlows();
+      await renderCompanyRanking();
       await renderCompanies();
     }
     function resetAll() {
       chainTree.querySelectorAll('input[type="checkbox"]').forEach(input => input.checked = false);
-      [ufFilter, revenueFilter, groupFilter].forEach(el => Array.from(el.options).forEach((option, index) => option.selected = index === 0));
+      [ufFilter, revenueFilter, criticidadeFilter, complexidadeFilter, groupFilter].forEach(el => Array.from(el.options).forEach((option, index) => option.selected = index === 0));
       treeSearch.value = '';
       citySearch.value = '';
+      minCityCompanies.value = '0';
       cnpjSearch.value = '';
       activeCityCode = null;
       update();
@@ -3542,8 +3906,9 @@ def write_componentes_html(payload: dict) -> None:
       });
     });
     chainTree.addEventListener('change', update);
-    [ufFilter, revenueFilter, groupFilter].forEach(el => el.addEventListener('change', update));
-    [citySearch, cnpjSearch].forEach(el => el.addEventListener('input', update));
+    [ufFilter, revenueFilter, criticidadeFilter, complexidadeFilter, groupFilter].forEach(el => el.addEventListener('change', update));
+    [citySearch, cnpjSearch, minCityCompanies].forEach(el => el.addEventListener('input', update));
+    companySort.addEventListener('change', () => { renderCompanyRanking(); renderCompanies(); });
     flowMode.addEventListener('change', renderFlows);
     document.getElementById('clearAll').addEventListener('click', resetAll);
     document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
@@ -3551,11 +3916,15 @@ def write_componentes_html(payload: dict) -> None:
       document.querySelectorAll('.view').forEach(item => item.classList.remove('active'));
       tab.classList.add('active');
       document.getElementById(tab.dataset.view).classList.add('active');
+      activeMapMode = tab.dataset.view === 'hubView' ? 'hubs' : 'territory';
+      updateMap(currentRows);
       if (tab.dataset.view === 'flowsView') renderFlows();
     }));
     buildTree();
     fillSelect(ufFilter, DATA.options.uf, 'Todas UFs');
     fillSelect(revenueFilter, DATA.options.revenue, 'Todos faturamentos');
+    fillSelect(criticidadeFilter, DATA.options.criticidade || [], 'Todas criticidades');
+    fillSelect(complexidadeFilter, DATA.options.complexidade || [], 'Todas complexidades');
     fillSelect(groupFilter, DATA.options.group, 'Todos CNAEs');
     update();
   </script>

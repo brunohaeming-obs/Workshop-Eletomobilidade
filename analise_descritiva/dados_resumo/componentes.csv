@@ -1,0 +1,133 @@
+﻿GT,Subsistema,Componente,Criticidade,Complexidade,NCMs destacados,Grupos CNAE ligados,CNPJs unicos,Municipios,CNPJs com patente,Patentes distintas
+GT 2 – Máquinas Elétricas,3. Sistema Térmico,3.2 Canais de Refrigeração,4,3,2,2,1375,253,324,1889
+GT 1 – Baterias,7. Interconexões e Alta Tensão,7.3 Terminais e Lugs,4,3,2,1,1255,237,305,1317
+GT 1 – Baterias,2. Célula e Componentes da Célula,2.1 Separadores,5,4,1,1,1255,237,305,1317
+GT 1 – Baterias,7. Interconexões e Alta Tensão,7.4 Barreiras e Isoladores,4,3,1,1,1255,237,305,1317
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.5 Fitas e Isolantes,4,3,1,1,1255,237,305,1317
+GT 1 – Baterias,5. Sistema Térmico,5.5 Isolamentos Térmicos,4,2,1,1,1255,237,305,1317
+GT 3 – Inversores / Conversores de Potência,5. Proteção e Segurança,5.5 Isoladores Galvânicos,5,4,1,1,1255,237,305,1317
+GT 2 – Máquinas Elétricas,9. Acessórios e Sistemas de Suporte,9.3 Tampas e Tampões,3,2,1,1,1255,237,305,1317
+GT 1 – Baterias,6. Segurança e Proteção,6.4 Sensores de Gás / Detectores,5,4,2,1,1255,237,305,1317
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.6 Parafusos / Fixadores,4,3,1,1,690,172,116,647
+GT 2 – Máquinas Elétricas,5. Sistema Estrutural e Mecânico,5.5 Parafusos e Fixadores,3,2,1,1,690,172,116,647
+GT 1 – Baterias,3. Módulos e Estruturas,3.2 Barramentos / Busbars,4,3,1,1,690,172,116,647
+GT 2 – Máquinas Elétricas,3. Sistema Térmico,3.3 Ventiladores / Hélices,4,3,1,1,622,156,175,744
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.2 Enrolamento de Bobinas,4,4,1,1,622,156,175,744
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.3 Inserção de Ímãs,4,4,1,1,622,156,175,744
+GT 3 – Inversores / Conversores de Potência,4. Gestão Térmica,4.5 Ventoinhas,4,3,1,1,622,156,175,744
+GT 1 – Baterias,3. Módulos e Estruturas,3.5 Encapsulantes / Adesivos / Selantes,4,3,2,2,535,170,80,188
+GT 1 – Baterias,2. Célula e Componentes da Célula,2.4 Carcaça da Célula (Latas / Caixas),5,4,2,2,513,142,84,662
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.6 Gases Técnicos,4,4,1,1,453,166,65,1674
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.2 Ânodos (Grafite),5,4,2,2,453,166,65,1674
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.6 Materiais p/ Precursores,5,4,1,1,453,166,65,1674
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.3 Gases Técnicos,4,3,1,1,453,166,65,1674
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.3 Eletrólito,5,4,2,1,377,147,63,156
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.5 Adesivos / Selantes,4,4,1,1,377,147,63,156
+GT 1 – Baterias,3. Módulos e Estruturas,3.4 Fixações e Suportes,4,3,1,1,377,147,63,156
+GT 3 – Inversores / Conversores de Potência,4. Gestão Térmica,4.3 Interface Térmica (TIM/Paste),4,3,1,1,377,147,63,156
+GT 1 – Baterias,5. Sistema Térmico,5.3 Trocadores de Calor,4,2,2,1,377,147,63,156
+GT 2 – Máquinas Elétricas,5. Sistema Estrutural e Mecânico,5.1 Carcaça / Estrutura,3,2,1,1,332,120,33,259
+GT 2 – Máquinas Elétricas,9. Acessórios e Sistemas de Suporte,9.4 Suportes e Fixações,3,2,1,1,332,120,33,259
+GT 2 – Máquinas Elétricas,9. Acessórios e Sistemas de Suporte,9.5 Proteções e Blindagens,3,2,1,1,310,138,30,106
+GT 3 – Inversores / Conversores de Potência,4. Gestão Térmica,4.1 Dissipadores Alumínio,4,3,1,1,310,138,30,106
+GT 1 – Baterias,5. Sistema Térmico,5.1 Placas de Resfriamento (Cold Plates),4,2,1,1,310,138,30,106
+GT 1 – Baterias,2. Célula e Componentes da Célula,2.3 Coletor de Corrente – Cátodo (Alumínio),5,4,2,1,310,138,30,106
+GT 3 – Inversores / Conversores de Potência,4. Gestão Térmica,4.2 Cold Plates,4,3,1,1,310,138,30,106
+GT 1 – Baterias,3. Módulos e Estruturas,3.1 Estrutura do Módulo,4,3,1,1,310,138,30,106
+GT 1 – Baterias,7. Interconexões e Alta Tensão,7.5 Proteção e Blindagem,4,3,1,1,310,138,30,106
+GT 2 – Máquinas Elétricas,5. Sistema Estrutural e Mecânico,5.3 Vedações,3,2,1,1,235,99,31,57
+GT 1 – Baterias,7. Interconexões e Alta Tensão,7.2 Conectores HV,4,3,1,1,221,73,40,385
+GT 1 – Baterias,3. Módulos e Estruturas,3.3 Conectores Elétricos,4,3,1,1,221,73,40,385
+GT 2 – Máquinas Elétricas,9. Acessórios e Sistemas de Suporte,9.1 Chicotes e Cabos,3,2,1,1,221,73,40,385
+GT 3 – Inversores / Conversores de Potência,6. Interfaces e Conectividade,6.1 Barramentos DC/AC,4,3,1,1,221,73,40,385
+GT 2 – Máquinas Elétricas,9. Acessórios e Sistemas de Suporte,9.2 Conectores,3,2,1,1,221,73,40,385
+GT 1 – Baterias,6. Segurança e Proteção,6.3 Contatores de Alta Tensão,5,4,1,1,221,73,40,385
+GT 2 – Máquinas Elétricas,4. Controle e Sensoriamento,4.4 Conectores e Chicotes,5,4,1,1,221,73,40,385
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.4 Terminais e Conexões,4,4,2,1,221,73,40,385
+GT 3 – Inversores / Conversores de Potência,5. Proteção e Segurança,5.6 Relés Segurança,5,4,1,1,221,73,40,385
+GT 3 – Inversores / Conversores de Potência,6. Interfaces e Conectividade,6.2 Conectores HV,4,3,1,1,221,73,40,385
+GT 3 – Inversores / Conversores de Potência,6. Interfaces e Conectividade,6.4 Malhas EMI / Blindagem,4,3,1,1,221,73,40,385
+GT 3 – Inversores / Conversores de Potência,6. Interfaces e Conectividade,6.3 Chicotes Elétricos,4,3,1,1,221,73,40,385
+GT 3 – Inversores / Conversores de Potência,5. Proteção e Segurança,5.2 Disjuntores,5,4,1,1,221,73,40,385
+GT 3 – Inversores / Conversores de Potência,5. Proteção e Segurança,5.1 Fusíveis HV,5,4,1,1,221,73,40,385
+GT 3 – Inversores / Conversores de Potência,5. Proteção e Segurança,5.3 Contatores HV,5,4,1,1,221,73,40,385
+GT 1 – Baterias,4. BMS e Eletrônica,4.4 Fiação / Cabos / Chicotes,5,4,1,1,221,73,40,385
+GT 1 – Baterias,4. BMS e Eletrônica,4.5 Relés / Contatores / Fusíveis,5,4,4,1,221,73,40,385
+GT 1 – Baterias,6. Segurança e Proteção,6.1 Fusíveis,5,4,1,1,221,73,40,385
+GT 1 – Baterias,6. Segurança e Proteção,6.2 Disjuntores,5,4,1,1,221,73,40,385
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.1 Estamparia de Chapas,4,4,1,1,202,71,46,210
+GT 1 – Baterias,5. Sistema Térmico,5.4 Fluído Térmico,4,2,1,1,199,103,25,346
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.3 Isolação Elétrica,4,4,2,1,196,96,27,145
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.4 Módulos Potência (PIM/IPM),5,4,1,1,187,73,28,198
+GT 3 – Inversores / Conversores de Potência,6. Interfaces e Conectividade,6.6 Filtros EMC,4,3,1,1,187,73,28,198
+GT 3 – Inversores / Conversores de Potência,2. Filtros e Armazenamento de Energia,2.3 Indutores Potência,4,3,1,1,187,73,28,198
+GT 1 – Baterias,5. Sistema Térmico,5.2 Bombas / Válvulas,4,2,2,1,181,62,51,405
+GT 3 – Inversores / Conversores de Potência,4. Gestão Térmica,4.6 Bombas Circulação,4,3,1,1,181,62,51,405
+GT 1 – Baterias,2. Célula e Componentes da Célula,2.5 Válvulas de Alívio (CID) e Dispositivos de Segurança,5,4,1,1,181,62,51,405
+GT 2 – Máquinas Elétricas,2. Sistema Rotor,2.4 Eixo do Rotor,4,4,1,1,181,62,51,405
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.6 Impregnação / Verniz,4,4,1,1,158,69,17,34
+GT 3 – Inversores / Conversores de Potência,7. Ensaios e Validação,7.4 Testes de Isolação,4,4,1,1,138,51,47,266
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.2 Instrumentação e Medição,5,3,3,1,138,51,47,266
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.4 Software de Teste e Validação,5,3,2,1,138,51,47,266
+GT 3 – Inversores / Conversores de Potência,7. Ensaios e Validação,7.5 Simuladores HIL,4,4,1,1,138,51,47,266
+GT 3 – Inversores / Conversores de Potência,7. Ensaios e Validação,7.1 Bancos de Potência,4,4,1,1,138,51,47,266
+GT 3 – Inversores / Conversores de Potência,4. Gestão Térmica,4.4 Sensores Temperatura,4,3,1,1,138,51,47,266
+GT 3 – Inversores / Conversores de Potência,5. Proteção e Segurança,5.4 Sensores Corrente HV,5,4,1,1,138,51,47,266
+GT 2 – Máquinas Elétricas,4. Controle e Sensoriamento,4.1 Sensores de Posição / Velocidade,5,4,1,1,138,51,47,266
+GT 2 – Máquinas Elétricas,7. Ensaios e Validação,7.1 Ensaios Elétricos,4,4,1,1,138,51,47,266
+GT 2 – Máquinas Elétricas,7. Ensaios e Validação,7.5 Bancos de Teste,4,4,1,1,138,51,47,266
+GT 3 – Inversores / Conversores de Potência,7. Ensaios e Validação,7.2 Câmaras EMC/EMI,4,4,1,1,138,51,47,266
+GT 3 – Inversores / Conversores de Potência,7. Ensaios e Validação,7.3 Câmara Climática,4,4,1,1,138,51,47,266
+GT 2 – Máquinas Elétricas,7. Ensaios e Validação,7.2 Ensaios Mecânicos,4,4,1,1,138,51,47,266
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.2 DSP Controle Vetorial,4,4,1,1,126,51,38,321
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.5 Isoladores Digitais,4,4,1,1,126,51,38,321
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.1 IGBT,5,4,1,1,126,51,38,321
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.3 FPGA Potência,4,4,1,1,126,51,38,321
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.5 Gate Drivers (Drivers Isolados),5,4,1,1,126,51,38,321
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.1 MCU Automotivo,4,4,1,1,126,51,38,321
+GT 3 – Inversores / Conversores de Potência,2. Filtros e Armazenamento de Energia,2.5 Capacitores Y/X,4,3,1,1,95,44,24,128
+GT 3 – Inversores / Conversores de Potência,2. Filtros e Armazenamento de Energia,2.2 Capacitores Eletrolíticos,4,3,1,1,95,44,24,128
+GT 3 – Inversores / Conversores de Potência,2. Filtros e Armazenamento de Energia,2.1 Capacitores Filme,4,3,1,1,95,44,24,128
+GT 2 – Máquinas Elétricas,4. Controle e Sensoriamento,4.2 Sensores de Temperatura,5,4,1,1,95,44,24,128
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.6 Snubber RC,5,4,1,1,95,44,24,128
+GT 3 – Inversores / Conversores de Potência,2. Filtros e Armazenamento de Energia,2.4 Choke Modo Comum,4,3,1,1,95,44,24,128
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.2 Cobre,4,4,1,1,76,40,11,91
+GT 1 – Baterias,2. Célula e Componentes da Célula,2.2 Coletor de Corrente – Ânodo (Cobre),5,4,1,1,76,40,11,91
+GT 2 – Máquinas Elétricas,3. Sistema Térmico,3.1 Carcaça de Resfriamento,4,3,1,1,76,40,11,91
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.1 Aço Elétrico (Silício),4,4,1,1,69,42,23,244
+GT 2 – Máquinas Elétricas,2. Sistema Rotor,2.1 Núcleo do Rotor,4,4,1,1,69,42,23,244
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.1 Núcleo do Estator,4,4,2,1,69,42,23,244
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.4 Lubrificantes,4,3,1,1,44,35,7,1540
+GT 3 – Inversores / Conversores de Potência,6. Interfaces e Conectividade,6.5 Interface Diagnóstico,4,3,1,1,40,20,14,104
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.6 Comunicação CAN/Ethernet,4,4,1,1,40,20,14,104
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.7 Firmware / Software Embarcado,4,4,1,1,16,8,1,1
+GT 3 – Inversores / Conversores de Potência,7. Ensaios e Validação,7.6 Validação Firmware,4,4,1,1,16,8,1,1
+GT 1 – Baterias,1. Materiais Ativos e Químicos,"1.1 Cátodos (NMC, LFP etc.)",5,4,3,0,0,0,0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.4 Aditivos,5,4,1,0,0,0,0,0
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.4 Usinagem de Precisão,4,4,1,0,0,0,0,0
+GT 2 – Máquinas Elétricas,2. Sistema Rotor,2.3 Enrolamentos (Rotor Bobinado),4,4,2,0,0,0,0,0
+GT 2 – Máquinas Elétricas,3. Sistema Térmico,3.4 Trocadores de Calor,4,3,1,0,0,0,0,0
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.2 Enrolamentos,4,4,2,0,0,0,0,0
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.3 Certificações e Serviços Técnicos,5,3,2,0,0,0,0,0
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.1 Equipamentos de Teste,5,3,1,0,0,0,0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.5 Solventes,5,4,2,0,0,0,0,0
+GT 1 – Baterias,4. BMS e Eletrônica,"4.3 Sensores (Corrente, Tensão, Temperatura)",5,4,1,0,0,0,0,0
+GT 1 – Baterias,4. BMS e Eletrônica,4.2 Microcontroladores / Circuitos Integrados,5,4,2,0,0,0,0,0
+GT 1 – Baterias,7. Interconexões e Alta Tensão,7.1 Cabos de Alta Tensão,4,3,1,0,0,0,0,0
+GT 1 – Baterias,6. Segurança e Proteção,6.5 Materiais Retardantes de Chama,5,4,1,0,0,0,0,0
+GT 1 – Baterias,4. BMS e Eletrônica,4.1 Placas Eletrônicas (PCBA),5,4,1,0,0,0,0,0
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.5 Montagem e Balanceamento,4,4,1,0,0,0,0,0
+GT 2 – Máquinas Elétricas,5. Sistema Estrutural e Mecânico,5.2 Rolamentos,3,2,1,0,0,0,0,0
+GT 2 – Máquinas Elétricas,5. Sistema Estrutural e Mecânico,5.4 Acoplamentos,3,2,1,0,0,0,0,0
+GT 2 – Máquinas Elétricas,4. Controle e Sensoriamento,4.3 Eletrônica de Interface (Placas PCBAs),5,4,1,0,0,0,0,0
+GT 2 – Máquinas Elétricas,2. Sistema Rotor,2.2 Ímãs Permanentes,4,4,1,0,0,0,0,0
+GT 2 – Máquinas Elétricas,7. Ensaios e Validação,7.3 Ensaios Térmicos,4,4,1,0,0,0,0,0
+GT 2 – Máquinas Elétricas,7. Ensaios e Validação,7.4 Ensaios NVH (Ruído/Vibração),4,4,1,0,0,0,0,0
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.4 PCB Multicamadas,4,4,1,0,0,0,0,0
+GT 3 – Inversores / Conversores de Potência,2. Filtros e Armazenamento de Energia,2.6 Varistores (MOV),4,3,1,0,0,0,0,0
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.2 SiC MOSFET,5,4,1,0,0,0,0,0
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.3 Diodos Rápidos,5,4,1,0,0,0,0,0
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.4 Resinas e Vernizes Isolantes,4,4,1,0,0,0,0,0
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.3 Ímãs de Terras Raras (NdFeB),4,4,1,0,0,0,0,0
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.2 Adesivos / Resinas,4,3,1,0,0,0,0,0
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.1 Soldas e Pastas,4,3,1,0,0,0,0,0

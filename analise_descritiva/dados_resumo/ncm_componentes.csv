@@ -1,0 +1,159 @@
+﻿GT,Subsistema,Componente,NCM,Descricao NCM,CNPJs unicos,Municipios
+GT 1 – Baterias,2. Célula e Componentes da Célula,2.1 Separadores,39202090,Separadores de polietileno,1255,237
+GT 1 – Baterias,7. Interconexões e Alta Tensão,7.4 Barreiras e Isoladores,39269090,Outras obras de plástico (proteções),1255,237
+GT 1 – Baterias,7. Interconexões e Alta Tensão,7.3 Terminais e Lugs,39269090,Isoladores elétricos,1255,237
+GT 1 – Baterias,7. Interconexões e Alta Tensão,7.3 Terminais e Lugs,85472090,Terminais e conectores (lugs),1255,237
+GT 1 – Baterias,5. Sistema Térmico,5.5 Isolamentos Térmicos,39211390,Espumas e mantas de polímeros,1255,237
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.5 Fitas e Isolantes,39199090,Fitas e isolantes elétricos,1255,237
+GT 2 – Máquinas Elétricas,9. Acessórios e Sistemas de Suporte,9.3 Tampas e Tampões,39269090,Outras obras de plástico,1255,237
+GT 3 – Inversores / Conversores de Potência,5. Proteção e Segurança,5.5 Isoladores Galvânicos,85472090,Peças isolantes para eletricidade,1255,237
+GT 2 – Máquinas Elétricas,3. Sistema Térmico,3.2 Canais de Refrigeração,39174090,"Outros tubos e suas conexões, de plástico",1255,237
+GT 1 – Baterias,6. Segurança e Proteção,6.4 Sensores de Gás / Detectores,39174090,"Outras chapas, filmes e tiras de plástico",1255,237
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.6 Parafusos / Fixadores,73181500,"Parafusos, porcas, arruelas",690,172
+GT 2 – Máquinas Elétricas,5. Sistema Estrutural e Mecânico,5.5 Parafusos e Fixadores,73181500,"Parafusos e pinos, mesmo com porcas ou arruelas",690,172
+GT 1 – Baterias,3. Módulos e Estruturas,3.2 Barramentos / Busbars,83025000,"Fios, cabos e outros condutores de cobre",690,172
+GT 3 – Inversores / Conversores de Potência,4. Gestão Térmica,4.5 Ventoinhas,84145990,Ventiladores (ventoinhas),622,156
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.3 Inserção de Ímãs,84798999,Outras máquinas e aparelhos para uso geral na indústria,622,156
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.2 Enrolamento de Bobinas,84798999,Outras máquinas e aparelhos para uso geral na indústria,622,156
+GT 2 – Máquinas Elétricas,3. Sistema Térmico,3.3 Ventiladores / Hélices,84145990,Outros ventiladores,622,156
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.6 Gases Técnicos,28042100,"Hidrogênio, argônio, hélio, neônio, criptônio, xenônio, radônio",453,166
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.6 Materiais p/ Precursores,28259010,"Sais de lítio (ex.: LiPF6, LiFSI)",453,166
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.2 Ânodos (Grafite),28332400,Manganês e compostos de manganês,453,166
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.3 Gases Técnicos,28042100,"Hidrogênio, argônio, nitrogênio, etc.",453,166
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.3 Eletrólito,38249941,Eletrólitos para baterias de lítio,377,147
+GT 1 – Baterias,3. Módulos e Estruturas,3.4 Fixações e Suportes,35069190,Adesivos à base de polímeros,377,147
+GT 1 – Baterias,3. Módulos e Estruturas,3.5 Encapsulantes / Adesivos / Selantes,38249959,Outros isolantes e encapsulantes,377,147
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.5 Adesivos / Selantes,35069190,Adesivos à base de polímeros,377,147
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.3 Eletrólito,38249949,Outros eletrólitos,377,147
+GT 3 – Inversores / Conversores de Potência,4. Gestão Térmica,4.3 Interface Térmica (TIM/Paste),38249989,Compostos e preparações químicas (TIM),377,147
+GT 1 – Baterias,5. Sistema Térmico,5.3 Trocadores de Calor,38190000,Fluidos para transmissão de calor,377,147
+GT 1 – Baterias,2. Célula e Componentes da Célula,2.4 Carcaça da Célula (Latas / Caixas),73269090,Outras obras de ferro/aço,332,120
+GT 2 – Máquinas Elétricas,9. Acessórios e Sistemas de Suporte,9.4 Suportes e Fixações,73269090,Outras obras de ferro ou aço,332,120
+GT 2 – Máquinas Elétricas,5. Sistema Estrutural e Mecânico,5.1 Carcaça / Estrutura,73269090,Outras obras de ferro ou aço,332,120
+GT 1 – Baterias,7. Interconexões e Alta Tensão,7.5 Proteção e Blindagem,76169900,Malhas e blindagens metálicas,310,138
+GT 2 – Máquinas Elétricas,9. Acessórios e Sistemas de Suporte,9.5 Proteções e Blindagens,76169900,Outras obras de alumínio,310,138
+GT 1 – Baterias,2. Célula e Componentes da Célula,2.3 Coletor de Corrente – Cátodo (Alumínio),76169900,Outras obras de alumínio,310,138
+GT 1 – Baterias,3. Módulos e Estruturas,3.1 Estrutura do Módulo,76109000,Perfis e estruturas de alumínio,310,138
+GT 1 – Baterias,5. Sistema Térmico,5.1 Placas de Resfriamento (Cold Plates),76169900,Placas / chapas de alumínio (cold plates),310,138
+GT 3 – Inversores / Conversores de Potência,4. Gestão Térmica,4.1 Dissipadores Alumínio,76169900,Obras de alumínio (dissipadores),310,138
+GT 3 – Inversores / Conversores de Potência,4. Gestão Térmica,4.2 Cold Plates,76169900,Estruturas de alumínio (cold plates),310,138
+GT 2 – Máquinas Elétricas,5. Sistema Estrutural e Mecânico,5.3 Vedações,40169300,Outros artefatos de borracha vulcanizada (retentores),235,99
+GT 3 – Inversores / Conversores de Potência,6. Interfaces e Conectividade,6.1 Barramentos DC/AC,85444900,Condutores elétricos (barramentos),221,73
+GT 2 – Máquinas Elétricas,9. Acessórios e Sistemas de Suporte,9.1 Chicotes e Cabos,85442000,"Fios e cabos elétricos, até 1.000 V",221,73
+GT 2 – Máquinas Elétricas,9. Acessórios e Sistemas de Suporte,9.2 Conectores,85366990,Outros aparelhos para conexão de circuitos elétricos,221,73
+GT 3 – Inversores / Conversores de Potência,5. Proteção e Segurança,5.1 Fusíveis HV,85361000,Fusíveis elétricos,221,73
+GT 3 – Inversores / Conversores de Potência,5. Proteção e Segurança,5.2 Disjuntores,85362000,Disjuntores automáticos,221,73
+GT 3 – Inversores / Conversores de Potência,5. Proteção e Segurança,5.3 Contatores HV,85364900,Relés e contatores,221,73
+GT 1 – Baterias,6. Segurança e Proteção,6.3 Contatores de Alta Tensão,85365090,Contatores / chaveadores,221,73
+GT 1 – Baterias,4. BMS e Eletrônica,4.4 Fiação / Cabos / Chicotes,85444200,"Fios e cabos, com conectores",221,73
+GT 1 – Baterias,3. Módulos e Estruturas,3.3 Conectores Elétricos,85369090,Outros aparelhos de conexão elétrica,221,73
+GT 1 – Baterias,4. BMS e Eletrônica,4.5 Relés / Contatores / Fusíveis,85364100,Relés,221,73
+GT 1 – Baterias,7. Interconexões e Alta Tensão,7.2 Conectores HV,85369090,Outros conectores elétricos,221,73
+GT 1 – Baterias,4. BMS e Eletrônica,4.5 Relés / Contatores / Fusíveis,85362000,Fusíveis,221,73
+GT 1 – Baterias,6. Segurança e Proteção,6.2 Disjuntores,85361000,Disjuntores,221,73
+GT 1 – Baterias,4. BMS e Eletrônica,4.5 Relés / Contatores / Fusíveis,85365090,Outros interruptores e dispositivos,221,73
+GT 2 – Máquinas Elétricas,4. Controle e Sensoriamento,4.4 Conectores e Chicotes,85444200,"Fios e cabos, com conectores",221,73
+GT 3 – Inversores / Conversores de Potência,6. Interfaces e Conectividade,6.3 Chicotes Elétricos,85443000,Jogos de fios e cabos (chicotes),221,73
+GT 3 – Inversores / Conversores de Potência,5. Proteção e Segurança,5.6 Relés Segurança,85364900,Relés elétricos,221,73
+GT 3 – Inversores / Conversores de Potência,6. Interfaces e Conectividade,6.2 Conectores HV,85366990,Conectores elétricos,221,73
+GT 3 – Inversores / Conversores de Potência,6. Interfaces e Conectividade,6.4 Malhas EMI / Blindagem,85443000,Cabos e malhas de cobre (blindagem),221,73
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.4 Terminais e Conexões,85369090,Outros aparelhos para conexão de circuitos elétricos,221,73
+GT 1 – Baterias,6. Segurança e Proteção,6.1 Fusíveis,85362000,Fusíveis,221,73
+GT 1 – Baterias,4. BMS e Eletrônica,4.5 Relés / Contatores / Fusíveis,85361000,Disjuntores,221,73
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.1 Estamparia de Chapas,82073000,Ferramentas intercambiáveis para máquinas-ferramenta,202,71
+GT 1 – Baterias,5. Sistema Térmico,5.4 Fluído Térmico,68061000,Mantas e placas isolantes,199,103
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.3 Isolação Elétrica,48209000,Papéis isolantes,196,96
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.4 Módulos Potência (PIM/IPM),85049040,Partes de conversores estáticos (módulos PIM/IPM),187,73
+GT 3 – Inversores / Conversores de Potência,2. Filtros e Armazenamento de Energia,2.3 Indutores Potência,85045000,Indutores elétricos,187,73
+GT 3 – Inversores / Conversores de Potência,6. Interfaces e Conectividade,6.6 Filtros EMC,85045000,Indutores e filtros (EMC),187,73
+GT 3 – Inversores / Conversores de Potência,4. Gestão Térmica,4.6 Bombas Circulação,84137080,Bombas centrífugas (bombas de circulação),181,62
+GT 2 – Máquinas Elétricas,2. Sistema Rotor,2.4 Eixo do Rotor,84831010,Eixos e vibraequins,181,62
+GT 1 – Baterias,5. Sistema Térmico,5.2 Bombas / Válvulas,84137010,Bombas centrífugas,181,62
+GT 1 – Baterias,5. Sistema Térmico,5.2 Bombas / Válvulas,84818019,Válvulas diversas,181,62
+GT 1 – Baterias,2. Célula e Componentes da Célula,2.4 Carcaça da Célula (Latas / Caixas),84812090,Válvulas de segurança,181,62
+GT 1 – Baterias,2. Célula e Componentes da Célula,2.5 Válvulas de Alívio (CID) e Dispositivos de Segurança,84813000,Válvulas de alívio / pressão,181,62
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.6 Impregnação / Verniz,32089010,Vernizes e produtos semelhantes,158,69
+GT 1 – Baterias,3. Módulos e Estruturas,3.5 Encapsulantes / Adesivos / Selantes,32141010,Selantes de silicone,158,69
+GT 2 – Máquinas Elétricas,7. Ensaios e Validação,7.1 Ensaios Elétricos,90303390,Outros instrumentos e aparelhos para medida elétrica,138,51
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.2 Instrumentação e Medição,90303990,Outros instrumentos e aparelhos de medida,138,51
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.4 Software de Teste e Validação,90318099,Outros aparelhos/eq. de teste,138,51
+GT 3 – Inversores / Conversores de Potência,7. Ensaios e Validação,7.5 Simuladores HIL,90318099,Equipamentos para teste e simulação (HIL),138,51
+GT 3 – Inversores / Conversores de Potência,7. Ensaios e Validação,7.4 Testes de Isolação,90303321,Instrumentos de medição elétrica (testes de isolação),138,51
+GT 3 – Inversores / Conversores de Potência,7. Ensaios e Validação,7.3 Câmara Climática,90318099,Equipamentos para testes climáticos,138,51
+GT 3 – Inversores / Conversores de Potência,7. Ensaios e Validação,7.1 Bancos de Potência,90303321,Instrumentos de medição elétrica (bancos de teste),138,51
+GT 3 – Inversores / Conversores de Potência,4. Gestão Térmica,4.4 Sensores Temperatura,90251990,Outros (termistores/termopares),138,51
+GT 3 – Inversores / Conversores de Potência,5. Proteção e Segurança,5.4 Sensores Corrente HV,90303321,Instrumentos de medição elétrica (sensores de corrente),138,51
+GT 2 – Máquinas Elétricas,7. Ensaios e Validação,7.5 Bancos de Teste,90318099,Outros aparelhos e dispositivos de medida ou controle,138,51
+GT 3 – Inversores / Conversores de Potência,7. Ensaios e Validação,7.2 Câmaras EMC/EMI,90318099,Aparelhos e equipamentos de medição (câmaras EMC),138,51
+GT 2 – Máquinas Elétricas,7. Ensaios e Validação,7.2 Ensaios Mecânicos,90241090,"Máquinas de ensaio de tração, compressão, flexão",138,51
+GT 2 – Máquinas Elétricas,4. Controle e Sensoriamento,4.1 Sensores de Posição / Velocidade,90318099,Outros aparelhos e dispositivos de medida ou controle,138,51
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.2 Instrumentação e Medição,90308990,Outros instrumentos de controle,138,51
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.2 Instrumentação e Medição,90278099,Outros instr. p/ análise física/química,138,51
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.1 IGBT,85412920,Transistores IGBT,126,51
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.2 DSP Controle Vetorial,85423190,Circuitos integrados (DSP),126,51
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.5 Gate Drivers (Drivers Isolados),85423999,Outros circuitos integrados (drivers isolados),126,51
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.5 Isoladores Digitais,85423999,Circuitos integrados de isolação (drivers isolados),126,51
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.1 MCU Automotivo,85423190,Circuitos integrados (MCU),126,51
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.3 FPGA Potência,85423999,Circuitos integrados diversos (FPGA),126,51
+GT 2 – Máquinas Elétricas,3. Sistema Térmico,3.2 Canais de Refrigeração,73251000,Peças de fundição de ferro ou aço,120,58
+GT 3 – Inversores / Conversores de Potência,2. Filtros e Armazenamento de Energia,2.1 Capacitores Filme,85322590,Capacitores dielétricos de filme,95,44
+GT 3 – Inversores / Conversores de Potência,2. Filtros e Armazenamento de Energia,2.5 Capacitores Y/X,85322990,Capacitores dielétricos diversos (Y/X),95,44
+GT 2 – Máquinas Elétricas,4. Controle e Sensoriamento,4.2 Sensores de Temperatura,85334099,Outros dispositivos de semicondutores,95,44
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.6 Snubber RC,85332120,Resistores de potência (Snubber RC),95,44
+GT 3 – Inversores / Conversores de Potência,2. Filtros e Armazenamento de Energia,2.4 Choke Modo Comum,85322990,Bobinas / indutores (chokes),95,44
+GT 3 – Inversores / Conversores de Potência,2. Filtros e Armazenamento de Energia,2.2 Capacitores Eletrolíticos,85322200,Capacitores eletrolíticos de alumínio,95,44
+GT 1 – Baterias,2. Célula e Componentes da Célula,2.2 Coletor de Corrente – Ânodo (Cobre),74081100,Folhas de cobre,76,40
+GT 2 – Máquinas Elétricas,3. Sistema Térmico,3.1 Carcaça de Resfriamento,76012000,"Alumínio não ligado, em formas brutas",76,40
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.2 Cobre,74081100,Folhas de cobre,76,40
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.1 Aço Elétrico (Silício),72251100,Produtos laminados planos de ferro ou aço não ligado,69,42
+GT 2 – Máquinas Elétricas,2. Sistema Rotor,2.1 Núcleo do Rotor,72251100,Produtos laminados planos de ferro ou aço não ligado,69,42
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.1 Núcleo do Estator,72251900,Outros produtos laminados planos de ferro ou aço,69,42
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.1 Núcleo do Estator,72251100,Produtos laminados planos de ferro ou aço não ligado,69,42
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.4 Lubrificantes,27101932,Óleos lubrificantes,44,35
+GT 3 – Inversores / Conversores de Potência,6. Interfaces e Conectividade,6.5 Interface Diagnóstico,85176259,Equipamentos para transmissão de dados (diagnóstico),40,20
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.6 Comunicação CAN/Ethernet,85176259,Equipamentos para transmissão de dados (CAN/Ethernet),40,20
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.7 Firmware / Software Embarcado,85234990,Software gravado,16,8
+GT 3 – Inversores / Conversores de Potência,7. Ensaios e Validação,7.6 Validação Firmware,85234990,Software gravado (ferramentas de teste),16,8
+GT 1 – Baterias,4. BMS e Eletrônica,"4.3 Sensores (Corrente, Tensão, Temperatura)",90258090,Instrumentos e aparelhos de medida,0,0
+GT 1 – Baterias,4. BMS e Eletrônica,4.1 Placas Eletrônicas (PCBA),85340090,Placas de circuito impresso,0,0
+GT 1 – Baterias,4. BMS e Eletrônica,4.2 Microcontroladores / Circuitos Integrados,85423100,Microprocessadores e unidades de proc.,0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.2 Ânodos (Grafite),25041000,Grafite natural (em pó ou flocos),0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,"1.1 Cátodos (NMC, LFP etc.)",28417100,Cobalto e compostos de cobalto,0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,"1.1 Cátodos (NMC, LFP etc.)",28252090,Hidróxidos de níquel e misturas,0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,"1.1 Cátodos (NMC, LFP etc.)",28046990,Lítio e compostos de lítio,0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.5 Solventes,29094400,"Ésteres orgânicos (EC, PC, etc.)",0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.5 Solventes,29094300,"Carbonatos orgânicos (DMC, DEC, EMC)",0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.4 Aditivos,38249993,Aditivos para baterias,0,0
+GT 1 – Baterias,2. Célula e Componentes da Célula,2.3 Coletor de Corrente – Cátodo (Alumínio),74071100,Folhas de alumínio (não ligado),0,0
+GT 1 – Baterias,4. BMS e Eletrônica,4.2 Microcontroladores / Circuitos Integrados,85423200,Memórias,0,0
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.4 Usinagem de Precisão,84571010,Centros de usinagem,0,0
+GT 2 – Máquinas Elétricas,5. Sistema Estrutural e Mecânico,5.2 Rolamentos,84821000,Rolamentos de esferas / rolos,0,0
+GT 2 – Máquinas Elétricas,5. Sistema Estrutural e Mecânico,5.4 Acoplamentos,84836000,Acoplamentos e juntas de eixos,0,0
+GT 2 – Máquinas Elétricas,4. Controle e Sensoriamento,4.3 Eletrônica de Interface (Placas PCBAs),85340090,"Placas, painéis, consoles e suportes, para comando ou distribuição",0,0
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.5 Montagem e Balanceamento,90311090,Máquinas e equipamentos de medida ou verificação,0,0
+GT 2 – Máquinas Elétricas,2. Sistema Rotor,2.3 Enrolamentos (Rotor Bobinado),72441100,"Fio de cobre refinado, com seção ≤ 6 mm",0,0
+GT 2 – Máquinas Elétricas,3. Sistema Térmico,3.4 Trocadores de Calor,84195000,Trocadores de calor,0,0
+GT 2 – Máquinas Elétricas,2. Sistema Rotor,2.2 Ímãs Permanentes,85051190,Ímãs permanentes de metais comuns,0,0
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.4 Terminais e Conexões,74071000,Barras e perfis de cobre refinado,0,0
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.2 Enrolamentos,72444100,"Fio de cobre refinado, com seção > 6 mm",0,0
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.3 Isolação Elétrica,39206200,Filmes de poliéster,0,0
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.2 Enrolamentos,72441100,"Fio de cobre refinado, com maior dimensão da seção ≤ 6 mm",0,0
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.3 Certificações e Serviços Técnicos,71394000,Serviços de ensaios técnicos,0,0
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.3 Certificações e Serviços Técnicos,71399190,Serviços de certificação,0,0
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.4 Software de Teste e Validação,85238029,Softwares (exceto jogos),0,0
+GT 1 – Baterias,6. Segurança e Proteção,6.5 Materiais Retardantes de Chama,38249996,Retardantes de chama,0,0
+GT 1 – Baterias,6. Segurança e Proteção,6.4 Sensores de Gás / Detectores,90271090,Detectores e analisadores de gases,0,0
+GT 1 – Baterias,5. Sistema Térmico,5.3 Trocadores de Calor,84195000,Trocadores de calor,0,0
+GT 1 – Baterias,7. Interconexões e Alta Tensão,7.1 Cabos de Alta Tensão,85446010,Cabos elétricos para tensão > 1kV,0,0
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.1 Equipamentos de Teste,90312000,Bancos de ensaio,0,0
+GT 2 – Máquinas Elétricas,2. Sistema Rotor,2.3 Enrolamentos (Rotor Bobinado),72444100,"Fio de cobre refinado, com seção > 6 mm",0,0
+GT 2 – Máquinas Elétricas,7. Ensaios e Validação,7.3 Ensaios Térmicos,90221090,Outros aparelhos e dispositivos automáticos para regulação,0,0
+GT 2 – Máquinas Elétricas,7. Ensaios e Validação,7.4 Ensaios NVH (Ruído/Vibração),90278010,Aparelhos para análise de vibrações,0,0
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.4 PCB Multicamadas,85340090,Placas de circuito impresso (PCB multicamadas),0,0
+GT 3 – Inversores / Conversores de Potência,2. Filtros e Armazenamento de Energia,2.6 Varistores (MOV),85334090,Resistores variáveis (varistores MOV),0,0
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.2 SiC MOSFET,85412990,Dispositivos semicondutores (SiC MOSFET),0,0
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.3 Diodos Rápidos,85411000,Diodos semicondutores,0,0
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.4 Resinas e Vernizes Isolantes,35072080,Resinas epóxi,0,0
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.3 Ímãs de Terras Raras (NdFeB),85051190,Ímãs permanentes de metais comuns (NdFeB),0,0
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.2 Adesivos / Resinas,35069199,Adesivos à base de polímeros,0,0
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.1 Soldas e Pastas,38101000,Pastas para solda,0,0

@@ -1,0 +1,44 @@
+﻿GT,Subsistema,Componente,NCM,Descricao NCM,CNPJs unicos,Municipios
+GT 1 – Baterias,1. Materiais Ativos e Químicos,"1.1 Cátodos (NMC, LFP etc.)",28046990,Lítio e compostos de lítio,0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,"1.1 Cátodos (NMC, LFP etc.)",28252090,Hidróxidos de níquel e misturas,0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,"1.1 Cátodos (NMC, LFP etc.)",28417100,Cobalto e compostos de cobalto,0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.2 Ânodos (Grafite),25041000,Grafite natural (em pó ou flocos),0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.4 Aditivos,38249993,Aditivos para baterias,0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.5 Solventes,29094300,"Carbonatos orgânicos (DMC, DEC, EMC)",0,0
+GT 1 – Baterias,1. Materiais Ativos e Químicos,1.5 Solventes,29094400,"Ésteres orgânicos (EC, PC, etc.)",0,0
+GT 1 – Baterias,2. Célula e Componentes da Célula,2.3 Coletor de Corrente – Cátodo (Alumínio),74071100,Folhas de alumínio (não ligado),0,0
+GT 1 – Baterias,4. BMS e Eletrônica,4.1 Placas Eletrônicas (PCBA),85340090,Placas de circuito impresso,0,0
+GT 1 – Baterias,4. BMS e Eletrônica,4.2 Microcontroladores / Circuitos Integrados,85423100,Microprocessadores e unidades de proc.,0,0
+GT 1 – Baterias,4. BMS e Eletrônica,4.2 Microcontroladores / Circuitos Integrados,85423200,Memórias,0,0
+GT 1 – Baterias,4. BMS e Eletrônica,"4.3 Sensores (Corrente, Tensão, Temperatura)",90258090,Instrumentos e aparelhos de medida,0,0
+GT 1 – Baterias,5. Sistema Térmico,5.3 Trocadores de Calor,84195000,Trocadores de calor,0,0
+GT 1 – Baterias,6. Segurança e Proteção,6.4 Sensores de Gás / Detectores,90271090,Detectores e analisadores de gases,0,0
+GT 1 – Baterias,6. Segurança e Proteção,6.5 Materiais Retardantes de Chama,38249996,Retardantes de chama,0,0
+GT 1 – Baterias,7. Interconexões e Alta Tensão,7.1 Cabos de Alta Tensão,85446010,Cabos elétricos para tensão > 1kV,0,0
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.1 Equipamentos de Teste,90312000,Bancos de ensaio,0,0
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.3 Certificações e Serviços Técnicos,71394000,Serviços de ensaios técnicos,0,0
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.3 Certificações e Serviços Técnicos,71399190,Serviços de certificação,0,0
+GT 1 – Baterias,"8. Testes, Validação e Certificação",8.4 Software de Teste e Validação,85238029,Softwares (exceto jogos),0,0
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.2 Enrolamentos,72441100,"Fio de cobre refinado, com maior dimensão da seção ≤ 6 mm",0,0
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.2 Enrolamentos,72444100,"Fio de cobre refinado, com seção > 6 mm",0,0
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.3 Isolação Elétrica,39206200,Filmes de poliéster,0,0
+GT 2 – Máquinas Elétricas,1. Sistema Estator,1.4 Terminais e Conexões,74071000,Barras e perfis de cobre refinado,0,0
+GT 2 – Máquinas Elétricas,2. Sistema Rotor,2.2 Ímãs Permanentes,85051190,Ímãs permanentes de metais comuns,0,0
+GT 2 – Máquinas Elétricas,2. Sistema Rotor,2.3 Enrolamentos (Rotor Bobinado),72441100,"Fio de cobre refinado, com seção ≤ 6 mm",0,0
+GT 2 – Máquinas Elétricas,2. Sistema Rotor,2.3 Enrolamentos (Rotor Bobinado),72444100,"Fio de cobre refinado, com seção > 6 mm",0,0
+GT 2 – Máquinas Elétricas,3. Sistema Térmico,3.4 Trocadores de Calor,84195000,Trocadores de calor,0,0
+GT 2 – Máquinas Elétricas,4. Controle e Sensoriamento,4.3 Eletrônica de Interface (Placas PCBAs),85340090,"Placas, painéis, consoles e suportes, para comando ou distribuição",0,0
+GT 2 – Máquinas Elétricas,5. Sistema Estrutural e Mecânico,5.2 Rolamentos,84821000,Rolamentos de esferas / rolos,0,0
+GT 2 – Máquinas Elétricas,5. Sistema Estrutural e Mecânico,5.4 Acoplamentos,84836000,Acoplamentos e juntas de eixos,0,0
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.4 Usinagem de Precisão,84571010,Centros de usinagem,0,0
+GT 2 – Máquinas Elétricas,6. Processos Produtivos,6.5 Montagem e Balanceamento,90311090,Máquinas e equipamentos de medida ou verificação,0,0
+GT 2 – Máquinas Elétricas,7. Ensaios e Validação,7.3 Ensaios Térmicos,90221090,Outros aparelhos e dispositivos automáticos para regulação,0,0
+GT 2 – Máquinas Elétricas,7. Ensaios e Validação,7.4 Ensaios NVH (Ruído/Vibração),90278010,Aparelhos para análise de vibrações,0,0
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.3 Ímãs de Terras Raras (NdFeB),85051190,Ímãs permanentes de metais comuns (NdFeB),0,0
+GT 2 – Máquinas Elétricas,8. Materiais e Insumos,8.4 Resinas e Vernizes Isolantes,35072080,Resinas epóxi,0,0
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.2 SiC MOSFET,85412990,Dispositivos semicondutores (SiC MOSFET),0,0
+GT 3 – Inversores / Conversores de Potência,1. Estágio de Potência – Semicondutores,1.3 Diodos Rápidos,85411000,Diodos semicondutores,0,0
+GT 3 – Inversores / Conversores de Potência,2. Filtros e Armazenamento de Energia,2.6 Varistores (MOV),85334090,Resistores variáveis (varistores MOV),0,0
+GT 3 – Inversores / Conversores de Potência,3. Controle e Processamento Eletrônico,3.4 PCB Multicamadas,85340090,Placas de circuito impresso (PCB multicamadas),0,0
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.1 Soldas e Pastas,38101000,Pastas para solda,0,0
+GT 3 – Inversores / Conversores de Potência,8. Materiais e Consumíveis,8.2 Adesivos / Resinas,35069199,Adesivos à base de polímeros,0,0

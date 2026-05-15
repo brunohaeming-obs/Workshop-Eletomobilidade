@@ -1,0 +1,16 @@
+{
+  "arquivos_csv": {
+    "by_uf_total": "by_uf_total.csv",
+    "by_uf_chain": "by_uf_chain.csv",
+    "by_revenue_chain": "by_revenue_chain.csv",
+    "by_cnae_chain": "by_cnae_chain.csv",
+    "by_city_chain": "by_city_chain.csv",
+    "by_gt": "by_gt.csv",
+    "componentes": "componentes.csv",
+    "ncm_componentes": "ncm_componentes.csv",
+    "risk_matrix": "risk_matrix.csv",
+    "gaps": "gaps.csv",
+    "cidades_componentes": "cidades_componentes.csv"
+  },
+  "observacao": "Cadeia produtiva inferida por CNAE associado ao NCM; nao representa transacao ou capacidade instalada fisica."
+}

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+<rect width="1920" height="1080" fill="#f7f3ea"/>
+<rect width="1920" height="1080" fill="#fff0e6" opacity="0.52"/>
+<rect x="0" y="0" width="1920" height="18" fill="#d16931"/>
+<text x="70" y="84" font-size="42" font-weight="800" fill="#172033" text-anchor="start">Base industrial por grupo tecnológico</text>
+<text x="70" y="124" font-size="28" font-weight="800" fill="#d16931" text-anchor="start">GT 3 – Inversores / Conversores de Potência</text>
+<text x="70" y="156" font-size="20" font-weight="500" fill="#4e5b6c" text-anchor="start">Onde há massa empresarial para adensar e onde estão os elos críticos para desenvolver ou atrair</text>
+<rect x="70" y="188" width="1780" height="116" rx="10" fill="#ffffff" stroke="#d8d3c8"/>
+<text x="106" y="240" font-size="38" font-weight="800" fill="#172033" text-anchor="start">4.755</text>
+<text x="106" y="270" font-size="16" font-weight="600" fill="#657184" text-anchor="start">CNPJs únicos</text>
+<text x="448" y="240" font-size="38" font-weight="800" fill="#172033" text-anchor="start">49</text>
+<text x="448" y="270" font-size="16" font-weight="600" fill="#657184" text-anchor="start">componentes</text>
+<text x="790" y="240" font-size="38" font-weight="800" fill="#172033" text-anchor="start">49</text>
+<text x="790" y="270" font-size="16" font-weight="600" fill="#657184" text-anchor="start">NCMs</text>
+<text x="1132" y="240" font-size="38" font-weight="800" fill="#172033" text-anchor="start">237</text>
+<text x="1132" y="270" font-size="16" font-weight="600" fill="#657184" text-anchor="start">municípios</text>
+<text x="1474" y="240" font-size="38" font-weight="800" fill="#172033" text-anchor="start">16.324</text>
+<text x="1474" y="270" font-size="16" font-weight="600" fill="#657184" text-anchor="start">patentes</text>
+<rect x="820" y="338" width="390" height="250" rx="10" fill="#ffffff" stroke="#d8d3c8"/>
+<text x="846" y="378" font-size="25" font-weight="800" fill="#172033" text-anchor="start">Leitura do GT</text>
+<text x="846" y="435" font-size="25" font-weight="800" fill="#1f8a70" text-anchor="start">8</text>
+<text x="908" y="433" font-size="15" font-weight="800" fill="#293447" text-anchor="start">Capacidade alta</text>
+<rect x="908" y="444" width="210" height="11" rx="6" fill="#e8e0d2"/>
+<rect x="908" y="444" width="34" height="11" rx="6" fill="#1f8a70"/>
+<text x="846" y="483" font-size="25" font-weight="800" fill="#734f96" text-anchor="start">25</text>
+<text x="908" y="481" font-size="15" font-weight="800" fill="#293447" text-anchor="start">Críticos/complexos</text>
+<rect x="908" y="492" width="210" height="11" rx="6" fill="#e8e0d2"/>
+<rect x="908" y="492" width="107" height="11" rx="6" fill="#734f96"/>
+<text x="846" y="531" font-size="25" font-weight="800" fill="#b24b34" text-anchor="start">6</text>
+<text x="908" y="529" font-size="15" font-weight="800" fill="#293447" text-anchor="start">Gaps sem CNPJs</text>
+<rect x="908" y="540" width="210" height="11" rx="6" fill="#e8e0d2"/>
+<rect x="908" y="540" width="25" height="11" rx="6" fill="#b24b34"/>
+<text x="846" y="564" font-size="13" font-weight="500" fill="#596677" text-anchor="start">Separar escala, desenvolvimento e atração.</text>
+<rect x="820" y="622" width="390" height="310" rx="10" fill="#ffffff" stroke="#d8d3c8"/>
+<text x="846" y="662" font-size="23" font-weight="800" fill="#172033" text-anchor="start">Elos com maior capacidade</text>
+<text x="846" y="700" font-size="14" font-weight="800" fill="#172033" text-anchor="start">8.5 Fitas e Isolantes</text>
+<rect x="846" y="715" width="205" height="12" rx="6" fill="#e8e0d2"/>
+<rect x="846" y="715" width="205" height="12" rx="6" fill="#d16931"/>
+<text x="1068" y="727" font-size="13" font-weight="800" fill="#172033" text-anchor="start">1.255</text>
+<text x="1132" y="727" font-size="11" font-weight="700" fill="#657184" text-anchor="start">CNPJs</text>
+<text x="846" y="752" font-size="14" font-weight="800" fill="#172033" text-anchor="start">5.5 Isoladores Galvânicos</text>
+<rect x="846" y="767" width="205" height="12" rx="6" fill="#e8e0d2"/>
+<rect x="846" y="767" width="205" height="12" rx="6" fill="#d16931"/>
+<text x="1068" y="779" font-size="13" font-weight="800" fill="#172033" text-anchor="start">1.255</text>
+<text x="1132" y="779" font-size="11" font-weight="700" fill="#657184" text-anchor="start">CNPJs</text>
+<text x="846" y="804" font-size="14" font-weight="800" fill="#172033" text-anchor="start">8.6 Parafusos / Fixadores</text>
+<rect x="846" y="819" width="205" height="12" rx="6" fill="#e8e0d2"/>
+<rect x="846" y="819" width="112" height="12" rx="6" fill="#d16931"/>
+<text x="1068" y="831" font-size="13" font-weight="800" fill="#172033" text-anchor="start">690</text>
+<text x="1132" y="831" font-size="11" font-weight="700" fill="#657184" text-anchor="start">CNPJs</text>
+<text x="846" y="856" font-size="14" font-weight="800" fill="#172033" text-anchor="start">4.5 Ventoinhas</text>
+<rect x="846" y="871" width="205" height="12" rx="6" fill="#e8e0d2"/>
+<rect x="846" y="871" width="101" height="12" rx="6" fill="#d16931"/>
+<text x="1068" y="883" font-size="13" font-weight="800" fill="#172033" text-anchor="start">622</text>
+<text x="1132" y="883" font-size="11" font-weight="700" fill="#657184" text-anchor="start">CNPJs</text>
+<rect x="1260" y="338" width="590" height="594" rx="10" fill="#ffffff" stroke="#d8d3c8"/>
+<text x="1286" y="378" font-size="26" font-weight="800" fill="#172033" text-anchor="start">Prioridades de adensamento</text>
+<text x="1286" y="416" font-size="17" font-weight="800" fill="#1f6f64" text-anchor="start">Críticos/complexos com capacidade</text>
+<text x="1286" y="448" font-size="14" font-weight="800" fill="#172033" text-anchor="start">5.5 Isoladores Galvânicos</text>
+<text x="1688" y="448" font-size="13" font-weight="700" fill="#657184" text-anchor="start">1.255 CNPJs</text>
+<text x="1286" y="480" font-size="14" font-weight="800" fill="#172033" text-anchor="start">5.6 Relés Segurança</text>
+<text x="1688" y="480" font-size="13" font-weight="700" fill="#657184" text-anchor="start">221 CNPJs</text>
+<text x="1286" y="512" font-size="14" font-weight="800" fill="#172033" text-anchor="start">5.2 Disjuntores</text>
+<text x="1688" y="512" font-size="13" font-weight="700" fill="#657184" text-anchor="start">221 CNPJs</text>
+<text x="1286" y="544" font-size="14" font-weight="800" fill="#172033" text-anchor="start">5.1 Fusíveis HV</text>
+<text x="1688" y="544" font-size="13" font-weight="700" fill="#657184" text-anchor="start">221 CNPJs</text>
+<text x="1286" y="576" font-size="14" font-weight="800" fill="#172033" text-anchor="start">5.3 Contatores HV</text>
+<text x="1688" y="576" font-size="13" font-weight="700" fill="#657184" text-anchor="start">221 CNPJs</text>
+<text x="1286" y="636" font-size="17" font-weight="800" fill="#9b3f2e" text-anchor="start">Gaps para atração, P&amp;D ou novos fornecedores</text>
+<text x="1286" y="668" font-size="14" font-weight="800" fill="#172033" text-anchor="start">1.2 SiC MOSFET</text>
+<text x="1710" y="668" font-size="12" font-weight="700" fill="#657184" text-anchor="start">85412990</text>
+<text x="1286" y="698" font-size="14" font-weight="800" fill="#172033" text-anchor="start">1.3 Diodos Rápidos</text>
+<text x="1710" y="698" font-size="12" font-weight="700" fill="#657184" text-anchor="start">85411000</text>
+<text x="1286" y="728" font-size="14" font-weight="800" fill="#172033" text-anchor="start">2.6 Varistores (MOV)</text>
+<text x="1710" y="728" font-size="12" font-weight="700" fill="#657184" text-anchor="start">85334090</text>
+<text x="1286" y="758" font-size="14" font-weight="800" fill="#172033" text-anchor="start">3.4 PCB Multicamadas</text>
+<text x="1710" y="758" font-size="12" font-weight="700" fill="#657184" text-anchor="start">85340090</text>
+<text x="1286" y="788" font-size="14" font-weight="800" fill="#172033" text-anchor="start">8.1 Soldas e Pastas</text>
+<text x="1710" y="788" font-size="12" font-weight="700" fill="#657184" text-anchor="start">38101000</text>
+<text x="1286" y="818" font-size="14" font-weight="800" fill="#172033" text-anchor="start">8.2 Adesivos / Resinas</text>
+<text x="1710" y="818" font-size="12" font-weight="700" fill="#657184" text-anchor="start">35069199</text>
+<text x="70" y="1028" font-size="16" font-weight="500" fill="#596677" text-anchor="start">Nota: CNPJs por GT são únicos dentro do GT; a mesma empresa pode aparecer em mais de um GT.</text>
+</svg>

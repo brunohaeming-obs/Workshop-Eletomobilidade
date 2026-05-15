@@ -1,0 +1,519 @@
+<!doctype html><html lang='pt-BR'><head><meta charset='utf-8'><title>Sankey da cadeia</title><style>body{margin:0;background:#222;display:grid;place-items:center;min-height:100vh}svg{width:min(100vw,1600px);height:auto;box-shadow:0 18px 60px rgba(0,0,0,.35)}</style></head><body><svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+<rect width="1920" height="1080" fill="#f6f2ea"/>
+<rect width="1920" height="1080" fill="#d9fff4" opacity="0.56"/>
+<rect x="0" y="0" width="1920" height="18" fill="#1f8a70"/>
+<text x="72" y="82" font-size="46" font-weight="800" fill="#172033" text-anchor="start">Sankey da cadeia de componentes</text>
+<text x="72" y="124" font-size="30" font-weight="800" fill="#1f8a70" text-anchor="start">GT 1 – Baterias</text>
+<text x="840" y="124" font-size="20" font-weight="500" fill="#4a5668" text-anchor="start">53 NCMs | 8 subcomponentes | 40 componentes | 60 relacoes NCM-componente</text>
+<rect x="42" y="148" width="256" height="40" rx="10" fill="#1f8a70"/>
+<text x="170" y="175" font-size="20" font-weight="800" fill="#ffffff" text-anchor="middle">NCM</text>
+<rect x="632" y="148" width="256" height="40" rx="10" fill="#1f8a70"/>
+<text x="760" y="175" font-size="20" font-weight="800" fill="#ffffff" text-anchor="middle">Subcomponente</text>
+<rect x="1302" y="148" width="256" height="40" rx="10" fill="#1f8a70"/>
+<text x="1430" y="175" font-size="20" font-weight="800" fill="#ffffff" text-anchor="middle">Componente</text>
+<path d="M184.0,291.8 C460.5,291.8 483.5,221.1 760.0,221.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,307.5 C460.5,307.5 483.5,200.4 760.0,200.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,323.1 C460.5,323.1 483.5,200.4 760.0,200.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,338.8 C460.5,338.8 483.5,304.1 760.0,304.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,354.4 C460.5,354.4 483.5,221.1 760.0,221.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,370.1 C460.5,370.1 483.5,200.4 760.0,200.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,385.8 C460.5,385.8 483.5,283.4 760.0,283.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,401.4 C460.5,401.4 483.5,283.4 760.0,283.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,417.1 C460.5,417.1 483.5,511.6 760.0,511.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,432.7 C460.5,432.7 483.5,490.9 760.0,490.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,448.4 C460.5,448.4 483.5,677.6 760.0,677.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,464.1 C460.5,464.1 483.5,241.9 760.0,241.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,479.7 C460.5,479.7 483.5,241.9 760.0,241.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,495.4 C460.5,495.4 483.5,511.6 760.0,511.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,511.0 C460.5,511.0 483.5,262.6 760.0,262.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,526.7 C460.5,526.7 483.5,822.9 760.0,822.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,542.4 C460.5,542.4 483.5,802.1 760.0,802.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,558.0 C460.5,558.0 483.5,324.9 760.0,324.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,573.7 C460.5,573.7 483.5,719.1 760.0,719.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,213.5 C460.5,213.5 483.5,885.1 760.0,885.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,213.5 C460.5,213.5 483.5,905.9 760.0,905.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,589.3 C460.5,589.3 483.5,698.4 760.0,698.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,605.0 C460.5,605.0 483.5,988.9 760.0,988.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,620.7 C460.5,620.7 483.5,988.9 760.0,988.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,636.3 C460.5,636.3 483.5,387.1 760.0,387.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,652.0 C460.5,652.0 483.5,366.4 760.0,366.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,667.6 C460.5,667.6 483.5,345.6 760.0,345.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,683.3 C460.5,683.3 483.5,428.6 760.0,428.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,197.8 C460.5,197.8 483.5,366.4 760.0,366.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,197.8 C460.5,197.8 483.5,636.1 760.0,636.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,197.8 C460.5,197.8 483.5,926.6 760.0,926.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,699.0 C460.5,699.0 483.5,449.4 760.0,449.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,714.6 C460.5,714.6 483.5,656.9 760.0,656.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,730.3 C460.5,730.3 483.5,677.6 760.0,677.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,745.9 C460.5,745.9 483.5,387.1 760.0,387.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,761.6 C460.5,761.6 483.5,407.9 760.0,407.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,777.3 C460.5,777.3 483.5,656.9 760.0,656.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,792.9 C460.5,792.9 483.5,1009.6 760.0,1009.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,808.6 C460.5,808.6 483.5,532.4 760.0,532.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,229.2 C460.5,229.2 483.5,615.4 760.0,615.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,229.2 C460.5,229.2 483.5,760.6 760.0,760.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,244.8 C460.5,244.8 483.5,615.4 760.0,615.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,244.8 C460.5,244.8 483.5,739.9 760.0,739.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,824.2 C460.5,824.2 483.5,615.4 760.0,615.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,260.5 C460.5,260.5 483.5,615.4 760.0,615.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,260.5 C460.5,260.5 483.5,781.4 760.0,781.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,276.1 C460.5,276.1 483.5,470.1 760.0,470.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,276.1 C460.5,276.1 483.5,864.4 760.0,864.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,839.9 C460.5,839.9 483.5,553.1 760.0,553.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,855.6 C460.5,855.6 483.5,553.1 760.0,553.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,871.2 C460.5,871.2 483.5,594.6 760.0,594.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,886.9 C460.5,886.9 483.5,843.6 760.0,843.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,902.5 C460.5,902.5 483.5,885.1 760.0,885.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,918.2 C460.5,918.2 483.5,573.9 760.0,573.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,933.9 C460.5,933.9 483.5,802.1 760.0,802.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,949.5 C460.5,949.5 483.5,968.1 760.0,968.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,965.2 C460.5,965.2 483.5,968.1 760.0,968.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,980.8 C460.5,980.8 483.5,968.1 760.0,968.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,996.5 C460.5,996.5 483.5,947.4 760.0,947.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M184.0,1012.2 C460.5,1012.2 483.5,1009.6 760.0,1009.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,200.4 C1088.9,200.4 1115.1,241.9 1430.0,241.9" fill="none" stroke="#1f8a70" stroke-width="6.96" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,221.1 C1088.9,221.1 1115.1,241.9 1430.0,241.9" fill="none" stroke="#1f8a70" stroke-width="5.85" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,241.9 C1088.9,241.9 1115.1,241.9 1430.0,241.9" fill="none" stroke="#1f8a70" stroke-width="5.85" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,262.6 C1088.9,262.6 1115.1,241.9 1430.0,241.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,283.4 C1088.9,283.4 1115.1,241.9 1430.0,241.9" fill="none" stroke="#1f8a70" stroke-width="5.85" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,304.1 C1088.9,304.1 1115.1,241.9 1430.0,241.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,324.9 C1088.9,324.9 1115.1,345.6 1430.0,345.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,345.6 C1088.9,345.6 1115.1,345.6 1430.0,345.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,366.4 C1088.9,366.4 1115.1,345.6 1430.0,345.6" fill="none" stroke="#1f8a70" stroke-width="5.85" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,387.1 C1088.9,387.1 1115.1,345.6 1430.0,345.6" fill="none" stroke="#1f8a70" stroke-width="5.85" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,407.9 C1088.9,407.9 1115.1,345.6 1430.0,345.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,428.6 C1088.9,428.6 1115.1,449.4 1430.0,449.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,449.4 C1088.9,449.4 1115.1,449.4 1430.0,449.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,470.1 C1088.9,470.1 1115.1,449.4 1430.0,449.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,490.9 C1088.9,490.9 1115.1,449.4 1430.0,449.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,511.6 C1088.9,511.6 1115.1,449.4 1430.0,449.4" fill="none" stroke="#1f8a70" stroke-width="5.85" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,532.4 C1088.9,532.4 1115.1,553.1 1430.0,553.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,553.1 C1088.9,553.1 1115.1,553.1 1430.0,553.1" fill="none" stroke="#1f8a70" stroke-width="5.85" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,573.9 C1088.9,573.9 1115.1,553.1 1430.0,553.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,594.6 C1088.9,594.6 1115.1,553.1 1430.0,553.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,615.4 C1088.9,615.4 1115.1,553.1 1430.0,553.1" fill="none" stroke="#1f8a70" stroke-width="7.90" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,636.1 C1088.9,636.1 1115.1,656.9 1430.0,656.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,656.9 C1088.9,656.9 1115.1,656.9 1430.0,656.9" fill="none" stroke="#1f8a70" stroke-width="5.85" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,677.6 C1088.9,677.6 1115.1,656.9 1430.0,656.9" fill="none" stroke="#1f8a70" stroke-width="5.85" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,698.4 C1088.9,698.4 1115.1,656.9 1430.0,656.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,719.1 C1088.9,719.1 1115.1,656.9 1430.0,656.9" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,739.9 C1088.9,739.9 1115.1,760.6 1430.0,760.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,760.6 C1088.9,760.6 1115.1,760.6 1430.0,760.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,781.4 C1088.9,781.4 1115.1,760.6 1430.0,760.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,802.1 C1088.9,802.1 1115.1,760.6 1430.0,760.6" fill="none" stroke="#1f8a70" stroke-width="5.85" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,822.9 C1088.9,822.9 1115.1,760.6 1430.0,760.6" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,843.6 C1088.9,843.6 1115.1,864.4 1430.0,864.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,864.4 C1088.9,864.4 1115.1,864.4 1430.0,864.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,885.1 C1088.9,885.1 1115.1,864.4 1430.0,864.4" fill="none" stroke="#1f8a70" stroke-width="5.85" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,905.9 C1088.9,905.9 1115.1,864.4 1430.0,864.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,926.6 C1088.9,926.6 1115.1,864.4 1430.0,864.4" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,947.4 C1088.9,947.4 1115.1,968.1 1430.0,968.1" fill="none" stroke="#1f8a70" stroke-width="4.40" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,968.1 C1088.9,968.1 1115.1,968.1 1430.0,968.1" fill="none" stroke="#1f8a70" stroke-width="6.96" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,988.9 C1088.9,988.9 1115.1,968.1 1430.0,968.1" fill="none" stroke="#1f8a70" stroke-width="5.85" stroke-opacity="0.160" stroke-linecap="round"/>
+<path d="M774.0,1009.6 C1088.9,1009.6 1115.1,968.1 1430.0,968.1" fill="none" stroke="#1f8a70" stroke-width="5.85" stroke-opacity="0.160" stroke-linecap="round"/>
+<g><title>76169900 - Malhas e blindagens metálicas</title>
+<rect x="170" y="193.29" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="200" font-size="14" font-weight="700" fill="#293447" text-anchor="end">76169900</text>
+</g>
+<g><title>39269090 - Isoladores elétricos</title>
+<rect x="170" y="208.95" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="216" font-size="14" font-weight="700" fill="#293447" text-anchor="end">39269090</text>
+</g>
+<g><title>85361000 - Disjuntores</title>
+<rect x="170" y="224.61" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="232" font-size="14" font-weight="700" fill="#293447" text-anchor="end">85361000</text>
+</g>
+<g><title>85362000 - Fusíveis</title>
+<rect x="170" y="240.27" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="247" font-size="14" font-weight="700" fill="#293447" text-anchor="end">85362000</text>
+</g>
+<g><title>85365090 - Contatores / chaveadores</title>
+<rect x="170" y="255.93" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="263" font-size="14" font-weight="700" fill="#293447" text-anchor="end">85365090</text>
+</g>
+<g><title>85369090 - Outros conectores elétricos</title>
+<rect x="170" y="271.59" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="279" font-size="14" font-weight="700" fill="#293447" text-anchor="end">85369090</text>
+</g>
+<g><title>25041000 - Grafite natural (em pó ou flocos)</title>
+<rect x="170" y="287.25" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="294" font-size="14" font-weight="700" fill="#293447" text-anchor="end">25041000</text>
+</g>
+<g><title>28046990 - Lítio e compostos de lítio</title>
+<rect x="170" y="302.91" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="310" font-size="14" font-weight="700" fill="#293447" text-anchor="end">28046990</text>
+</g>
+<g><title>28252090 - Hidróxidos de níquel e misturas</title>
+<rect x="170" y="318.57" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="326" font-size="14" font-weight="700" fill="#293447" text-anchor="end">28252090</text>
+</g>
+<g><title>28259010 - Sais de lítio (ex.: LiPF6, LiFSI)</title>
+<rect x="170" y="334.23" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="341" font-size="14" font-weight="700" fill="#293447" text-anchor="end">28259010</text>
+</g>
+<g><title>28332400 - Manganês e compostos de manganês</title>
+<rect x="170" y="349.89" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="357" font-size="14" font-weight="700" fill="#293447" text-anchor="end">28332400</text>
+</g>
+<g><title>28417100 - Cobalto e compostos de cobalto</title>
+<rect x="170" y="365.55" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="373" font-size="14" font-weight="700" fill="#293447" text-anchor="end">28417100</text>
+</g>
+<g><title>29094300 - Carbonatos orgânicos (DMC, DEC, EMC)</title>
+<rect x="170" y="381.21" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="388" font-size="14" font-weight="700" fill="#293447" text-anchor="end">29094300</text>
+</g>
+<g><title>29094400 - Ésteres orgânicos (EC, PC, etc.)</title>
+<rect x="170" y="396.87" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="404" font-size="14" font-weight="700" fill="#293447" text-anchor="end">29094400</text>
+</g>
+<g><title>32141010 - Selantes de silicone</title>
+<rect x="170" y="412.53" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="420" font-size="14" font-weight="700" fill="#293447" text-anchor="end">32141010</text>
+</g>
+<g><title>35069190 - Adesivos à base de polímeros</title>
+<rect x="170" y="428.19" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="435" font-size="14" font-weight="700" fill="#293447" text-anchor="end">35069190</text>
+</g>
+<g><title>38190000 - Fluidos para transmissão de calor</title>
+<rect x="170" y="443.85" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="451" font-size="14" font-weight="700" fill="#293447" text-anchor="end">38190000</text>
+</g>
+<g><title>38249941 - Eletrólitos para baterias de lítio</title>
+<rect x="170" y="459.52" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="467" font-size="14" font-weight="700" fill="#293447" text-anchor="end">38249941</text>
+</g>
+<g><title>38249949 - Outros eletrólitos</title>
+<rect x="170" y="475.18" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="482" font-size="14" font-weight="700" fill="#293447" text-anchor="end">38249949</text>
+</g>
+<g><title>38249959 - Outros isolantes e encapsulantes</title>
+<rect x="170" y="490.84" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="498" font-size="14" font-weight="700" fill="#293447" text-anchor="end">38249959</text>
+</g>
+<g><title>38249993 - Aditivos para baterias</title>
+<rect x="170" y="506.50" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="514" font-size="14" font-weight="700" fill="#293447" text-anchor="end">38249993</text>
+</g>
+<g><title>38249996 - Retardantes de chama</title>
+<rect x="170" y="522.16" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="529" font-size="14" font-weight="700" fill="#293447" text-anchor="end">38249996</text>
+</g>
+<g><title>39174090 - Outras chapas, filmes e tiras de plástico</title>
+<rect x="170" y="537.82" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="545" font-size="14" font-weight="700" fill="#293447" text-anchor="end">39174090</text>
+</g>
+<g><title>39202090 - Separadores de polietileno</title>
+<rect x="170" y="553.48" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="561" font-size="14" font-weight="700" fill="#293447" text-anchor="end">39202090</text>
+</g>
+<g><title>39211390 - Espumas e mantas de polímeros</title>
+<rect x="170" y="569.14" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="576" font-size="14" font-weight="700" fill="#293447" text-anchor="end">39211390</text>
+</g>
+<g><title>68061000 - Mantas e placas isolantes</title>
+<rect x="170" y="584.80" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="592" font-size="14" font-weight="700" fill="#293447" text-anchor="end">68061000</text>
+</g>
+<g><title>71394000 - Serviços de ensaios técnicos</title>
+<rect x="170" y="600.46" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="608" font-size="14" font-weight="700" fill="#293447" text-anchor="end">71394000</text>
+</g>
+<g><title>71399190 - Serviços de certificação</title>
+<rect x="170" y="616.12" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="623" font-size="14" font-weight="700" fill="#293447" text-anchor="end">71399190</text>
+</g>
+<g><title>73269090 - Outras obras de ferro/aço</title>
+<rect x="170" y="631.78" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="639" font-size="14" font-weight="700" fill="#293447" text-anchor="end">73269090</text>
+</g>
+<g><title>74071100 - Folhas de alumínio (não ligado)</title>
+<rect x="170" y="647.44" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="654" font-size="14" font-weight="700" fill="#293447" text-anchor="end">74071100</text>
+</g>
+<g><title>74081100 - Folhas de cobre</title>
+<rect x="170" y="663.10" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="670" font-size="14" font-weight="700" fill="#293447" text-anchor="end">74081100</text>
+</g>
+<g><title>76109000 - Perfis e estruturas de alumínio</title>
+<rect x="170" y="678.76" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="686" font-size="14" font-weight="700" fill="#293447" text-anchor="end">76109000</text>
+</g>
+<g><title>83025000 - Fios, cabos e outros condutores de cobre</title>
+<rect x="170" y="694.42" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="701" font-size="14" font-weight="700" fill="#293447" text-anchor="end">83025000</text>
+</g>
+<g><title>84137010 - Bombas centrífugas</title>
+<rect x="170" y="710.08" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="717" font-size="14" font-weight="700" fill="#293447" text-anchor="end">84137010</text>
+</g>
+<g><title>84195000 - Trocadores de calor</title>
+<rect x="170" y="725.74" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="733" font-size="14" font-weight="700" fill="#293447" text-anchor="end">84195000</text>
+</g>
+<g><title>84812090 - Válvulas de segurança</title>
+<rect x="170" y="741.40" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="748" font-size="14" font-weight="700" fill="#293447" text-anchor="end">84812090</text>
+</g>
+<g><title>84813000 - Válvulas de alívio / pressão</title>
+<rect x="170" y="757.06" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="764" font-size="14" font-weight="700" fill="#293447" text-anchor="end">84813000</text>
+</g>
+<g><title>84818019 - Válvulas diversas</title>
+<rect x="170" y="772.72" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="780" font-size="14" font-weight="700" fill="#293447" text-anchor="end">84818019</text>
+</g>
+<g><title>85238029 - Softwares (exceto jogos)</title>
+<rect x="170" y="788.38" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="795" font-size="14" font-weight="700" fill="#293447" text-anchor="end">85238029</text>
+</g>
+<g><title>85340090 - Placas de circuito impresso</title>
+<rect x="170" y="804.04" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="811" font-size="14" font-weight="700" fill="#293447" text-anchor="end">85340090</text>
+</g>
+<g><title>85364100 - Relés</title>
+<rect x="170" y="819.70" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="827" font-size="14" font-weight="700" fill="#293447" text-anchor="end">85364100</text>
+</g>
+<g><title>85423100 - Microprocessadores e unidades de proc.</title>
+<rect x="170" y="835.36" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="842" font-size="14" font-weight="700" fill="#293447" text-anchor="end">85423100</text>
+</g>
+<g><title>85423200 - Memórias</title>
+<rect x="170" y="851.02" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="858" font-size="14" font-weight="700" fill="#293447" text-anchor="end">85423200</text>
+</g>
+<g><title>85444200 - Fios e cabos, com conectores</title>
+<rect x="170" y="866.68" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="874" font-size="14" font-weight="700" fill="#293447" text-anchor="end">85444200</text>
+</g>
+<g><title>85446010 - Cabos elétricos para tensão &gt; 1kV</title>
+<rect x="170" y="882.35" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="889" font-size="14" font-weight="700" fill="#293447" text-anchor="end">85446010</text>
+</g>
+<g><title>85472090 - Terminais e conectores (lugs)</title>
+<rect x="170" y="898.01" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="905" font-size="14" font-weight="700" fill="#293447" text-anchor="end">85472090</text>
+</g>
+<g><title>90258090 - Instrumentos e aparelhos de medida</title>
+<rect x="170" y="913.67" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="921" font-size="14" font-weight="700" fill="#293447" text-anchor="end">90258090</text>
+</g>
+<g><title>90271090 - Detectores e analisadores de gases</title>
+<rect x="170" y="929.33" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="936" font-size="14" font-weight="700" fill="#293447" text-anchor="end">90271090</text>
+</g>
+<g><title>90278099 - Outros instr. p/ análise física/química</title>
+<rect x="170" y="944.99" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="952" font-size="14" font-weight="700" fill="#293447" text-anchor="end">90278099</text>
+</g>
+<g><title>90303990 - Outros instrumentos e aparelhos de medida</title>
+<rect x="170" y="960.65" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="968" font-size="14" font-weight="700" fill="#293447" text-anchor="end">90303990</text>
+</g>
+<g><title>90308990 - Outros instrumentos de controle</title>
+<rect x="170" y="976.31" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="983" font-size="14" font-weight="700" fill="#293447" text-anchor="end">90308990</text>
+</g>
+<g><title>90312000 - Bancos de ensaio</title>
+<rect x="170" y="991.97" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="999" font-size="14" font-weight="700" fill="#293447" text-anchor="end">90312000</text>
+</g>
+<g><title>90318099 - Outros aparelhos/eq. de teste</title>
+<rect x="170" y="1007.63" width="14" height="9.08" rx="3" fill="#1f8a70"/>
+<text x="158" y="1015" font-size="14" font-weight="700" fill="#293447" text-anchor="end">90318099</text>
+</g>
+<g><title>1.1 Cátodos (NMC, LFP etc.)</title>
+<rect x="760" y="194.36" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="203" font-size="13" font-weight="700" fill="#293447" text-anchor="start">1.1 Cátodos (NMC, LFP etc.)</text>
+</g>
+<g><title>1.2 Ânodos (Grafite)</title>
+<rect x="760" y="215.11" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="224" font-size="13" font-weight="700" fill="#293447" text-anchor="start">1.2 Ânodos (Grafite)</text>
+</g>
+<g><title>1.3 Eletrólito</title>
+<rect x="760" y="235.86" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="244" font-size="14" font-weight="700" fill="#293447" text-anchor="start">1.3 Eletrólito</text>
+</g>
+<g><title>1.4 Aditivos</title>
+<rect x="760" y="256.61" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="265" font-size="14" font-weight="700" fill="#293447" text-anchor="start">1.4 Aditivos</text>
+</g>
+<g><title>1.5 Solventes</title>
+<rect x="760" y="277.36" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="286" font-size="14" font-weight="700" fill="#293447" text-anchor="start">1.5 Solventes</text>
+</g>
+<g><title>1.6 Materiais p/ Precursores</title>
+<rect x="760" y="298.11" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="307" font-size="13" font-weight="700" fill="#293447" text-anchor="start">1.6 Materiais p/ Precursores</text>
+</g>
+<g><title>2.1 Separadores</title>
+<rect x="760" y="318.86" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="327" font-size="14" font-weight="700" fill="#293447" text-anchor="start">2.1 Separadores</text>
+</g>
+<g><title>2.2 Coletor de Corrente – Ânodo (Cobre)</title>
+<rect x="760" y="339.61" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="348" font-size="12" font-weight="700" fill="#293447" text-anchor="start">2.2 Coletor de Corrente – Ânodo (Cobr...</text>
+</g>
+<g><title>2.3 Coletor de Corrente – Cátodo (Alumínio)</title>
+<rect x="760" y="360.36" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="369" font-size="12" font-weight="700" fill="#293447" text-anchor="start">2.3 Coletor de Corrente – Cátodo (Alu...</text>
+</g>
+<g><title>2.4 Carcaça da Célula (Latas / Caixas)</title>
+<rect x="760" y="381.11" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="390" font-size="12" font-weight="700" fill="#293447" text-anchor="start">2.4 Carcaça da Célula (Latas / Caixas)</text>
+</g>
+<g><title>2.5 Válvulas de Alívio (CID) e Dispositivos de Segurança</title>
+<rect x="760" y="401.86" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="410" font-size="12" font-weight="700" fill="#293447" text-anchor="start">2.5 Válvulas de Alívio (CID) e Dispos...</text>
+</g>
+<g><title>3.1 Estrutura do Módulo</title>
+<rect x="760" y="422.61" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="431" font-size="13" font-weight="700" fill="#293447" text-anchor="start">3.1 Estrutura do Módulo</text>
+</g>
+<g><title>3.2 Barramentos / Busbars</title>
+<rect x="760" y="443.36" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="452" font-size="13" font-weight="700" fill="#293447" text-anchor="start">3.2 Barramentos / Busbars</text>
+</g>
+<g><title>3.3 Conectores Elétricos</title>
+<rect x="760" y="464.11" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="473" font-size="13" font-weight="700" fill="#293447" text-anchor="start">3.3 Conectores Elétricos</text>
+</g>
+<g><title>3.4 Fixações e Suportes</title>
+<rect x="760" y="484.86" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="493" font-size="13" font-weight="700" fill="#293447" text-anchor="start">3.4 Fixações e Suportes</text>
+</g>
+<g><title>3.5 Encapsulantes / Adesivos / Selantes</title>
+<rect x="760" y="505.61" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="514" font-size="12" font-weight="700" fill="#293447" text-anchor="start">3.5 Encapsulantes / Adesivos / Selant...</text>
+</g>
+<g><title>4.1 Placas Eletrônicas (PCBA)</title>
+<rect x="760" y="526.36" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="535" font-size="13" font-weight="700" fill="#293447" text-anchor="start">4.1 Placas Eletrônicas (PCBA)</text>
+</g>
+<g><title>4.2 Microcontroladores / Circuitos Integrados</title>
+<rect x="760" y="547.11" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="556" font-size="12" font-weight="700" fill="#293447" text-anchor="start">4.2 Microcontroladores / Circuitos In...</text>
+</g>
+<g><title>4.3 Sensores (Corrente, Tensão, Temperatura)</title>
+<rect x="760" y="567.86" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="576" font-size="12" font-weight="700" fill="#293447" text-anchor="start">4.3 Sensores (Corrente, Tensão, Tempe...</text>
+</g>
+<g><title>4.4 Fiação / Cabos / Chicotes</title>
+<rect x="760" y="588.61" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="597" font-size="13" font-weight="700" fill="#293447" text-anchor="start">4.4 Fiação / Cabos / Chicotes</text>
+</g>
+<g><title>4.5 Relés / Contatores / Fusíveis</title>
+<rect x="760" y="609.36" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="618" font-size="12" font-weight="700" fill="#293447" text-anchor="start">4.5 Relés / Contatores / Fusíveis</text>
+</g>
+<g><title>5.1 Placas de Resfriamento (Cold Plates)</title>
+<rect x="760" y="630.11" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="639" font-size="12" font-weight="700" fill="#293447" text-anchor="start">5.1 Placas de Resfriamento (Cold Plat...</text>
+</g>
+<g><title>5.2 Bombas / Válvulas</title>
+<rect x="760" y="650.86" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="659" font-size="13" font-weight="700" fill="#293447" text-anchor="start">5.2 Bombas / Válvulas</text>
+</g>
+<g><title>5.3 Trocadores de Calor</title>
+<rect x="760" y="671.61" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="680" font-size="13" font-weight="700" fill="#293447" text-anchor="start">5.3 Trocadores de Calor</text>
+</g>
+<g><title>5.4 Fluído Térmico</title>
+<rect x="760" y="692.36" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="701" font-size="13" font-weight="700" fill="#293447" text-anchor="start">5.4 Fluído Térmico</text>
+</g>
+<g><title>5.5 Isolamentos Térmicos</title>
+<rect x="760" y="713.11" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="722" font-size="13" font-weight="700" fill="#293447" text-anchor="start">5.5 Isolamentos Térmicos</text>
+</g>
+<g><title>6.1 Fusíveis</title>
+<rect x="760" y="733.86" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="742" font-size="14" font-weight="700" fill="#293447" text-anchor="start">6.1 Fusíveis</text>
+</g>
+<g><title>6.2 Disjuntores</title>
+<rect x="760" y="754.61" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="763" font-size="14" font-weight="700" fill="#293447" text-anchor="start">6.2 Disjuntores</text>
+</g>
+<g><title>6.3 Contatores de Alta Tensão</title>
+<rect x="760" y="775.36" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="784" font-size="13" font-weight="700" fill="#293447" text-anchor="start">6.3 Contatores de Alta Tensão</text>
+</g>
+<g><title>6.4 Sensores de Gás / Detectores</title>
+<rect x="760" y="796.11" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="805" font-size="13" font-weight="700" fill="#293447" text-anchor="start">6.4 Sensores de Gás / Detectores</text>
+</g>
+<g><title>6.5 Materiais Retardantes de Chama</title>
+<rect x="760" y="816.86" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="825" font-size="12" font-weight="700" fill="#293447" text-anchor="start">6.5 Materiais Retardantes de Chama</text>
+</g>
+<g><title>7.1 Cabos de Alta Tensão</title>
+<rect x="760" y="837.61" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="846" font-size="13" font-weight="700" fill="#293447" text-anchor="start">7.1 Cabos de Alta Tensão</text>
+</g>
+<g><title>7.2 Conectores HV</title>
+<rect x="760" y="858.36" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="867" font-size="13" font-weight="700" fill="#293447" text-anchor="start">7.2 Conectores HV</text>
+</g>
+<g><title>7.3 Terminais e Lugs</title>
+<rect x="760" y="879.11" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="888" font-size="13" font-weight="700" fill="#293447" text-anchor="start">7.3 Terminais e Lugs</text>
+</g>
+<g><title>7.4 Barreiras e Isoladores</title>
+<rect x="760" y="899.86" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="908" font-size="13" font-weight="700" fill="#293447" text-anchor="start">7.4 Barreiras e Isoladores</text>
+</g>
+<g><title>7.5 Proteção e Blindagem</title>
+<rect x="760" y="920.61" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="929" font-size="13" font-weight="700" fill="#293447" text-anchor="start">7.5 Proteção e Blindagem</text>
+</g>
+<g><title>8.1 Equipamentos de Teste</title>
+<rect x="760" y="941.36" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="950" font-size="13" font-weight="700" fill="#293447" text-anchor="start">8.1 Equipamentos de Teste</text>
+</g>
+<g><title>8.2 Instrumentação e Medição</title>
+<rect x="760" y="962.11" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="971" font-size="13" font-weight="700" fill="#293447" text-anchor="start">8.2 Instrumentação e Medição</text>
+</g>
+<g><title>8.3 Certificações e Serviços Técnicos</title>
+<rect x="760" y="982.86" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="991" font-size="12" font-weight="700" fill="#293447" text-anchor="start">8.3 Certificações e Serviços Técnicos</text>
+</g>
+<g><title>8.4 Software de Teste e Validação</title>
+<rect x="760" y="1003.61" width="14" height="12.03" rx="3" fill="#1f8a70"/>
+<text x="786" y="1012" font-size="12" font-weight="700" fill="#293447" text-anchor="start">8.4 Software de Teste e Validação</text>
+</g>
+<g><title>1. Materiais Ativos e Químicos</title>
+<rect x="1430" y="230.88" width="14" height="22.00" rx="3" fill="#1f8a70"/>
+<text x="1456" y="244" font-size="13" font-weight="700" fill="#293447" text-anchor="start">1. Materiais Ativos e Químicos</text>
+</g>
+<g><title>2. Célula e Componentes da Célula</title>
+<rect x="1430" y="334.62" width="14" height="22.00" rx="3" fill="#1f8a70"/>
+<text x="1456" y="348" font-size="12" font-weight="700" fill="#293447" text-anchor="start">2. Célula e Componentes da Célula</text>
+</g>
+<g><title>3. Módulos e Estruturas</title>
+<rect x="1430" y="438.38" width="14" height="22.00" rx="3" fill="#1f8a70"/>
+<text x="1456" y="452" font-size="13" font-weight="700" fill="#293447" text-anchor="start">3. Módulos e Estruturas</text>
+</g>
+<g><title>4. BMS e Eletrônica</title>
+<rect x="1430" y="542.12" width="14" height="22.00" rx="3" fill="#1f8a70"/>
+<text x="1456" y="556" font-size="13" font-weight="700" fill="#293447" text-anchor="start">4. BMS e Eletrônica</text>
+</g>
+<g><title>5. Sistema Térmico</title>
+<rect x="1430" y="645.88" width="14" height="22.00" rx="3" fill="#1f8a70"/>
+<text x="1456" y="659" font-size="13" font-weight="700" fill="#293447" text-anchor="start">5. Sistema Térmico</text>
+</g>
+<g><title>6. Segurança e Proteção</title>
+<rect x="1430" y="749.62" width="14" height="22.00" rx="3" fill="#1f8a70"/>
+<text x="1456" y="763" font-size="13" font-weight="700" fill="#293447" text-anchor="start">6. Segurança e Proteção</text>
+</g>
+<g><title>7. Interconexões e Alta Tensão</title>
+<rect x="1430" y="853.38" width="14" height="22.00" rx="3" fill="#1f8a70"/>
+<text x="1456" y="867" font-size="13" font-weight="700" fill="#293447" text-anchor="start">7. Interconexões e Alta Tensão</text>
+</g>
+<g><title>8. Testes, Validação e Certificação</title>
+<rect x="1430" y="957.12" width="14" height="22.00" rx="3" fill="#1f8a70"/>
+<text x="1456" y="971" font-size="12" font-weight="700" fill="#293447" text-anchor="start">8. Testes, Validação e Certificação</text>
+</g>
+<text x="72" y="1050" font-size="18" font-weight="500" fill="#5e6877" text-anchor="start">Largura dos fluxos indica quantidade de relacoes. Passe o mouse sobre os NCMs no HTML para ver a descricao.</text>
+</svg></body></html>

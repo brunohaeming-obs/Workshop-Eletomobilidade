@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+<rect width="1920" height="1080" fill="#f6f2ea"/>
+<rect x="0" y="0" width="1920" height="1080" fill="#fff0e6" opacity="0.58"/>
+<rect x="0" y="0" width="1920" height="18" fill="#d16931"/>
+<text x="72" y="88" font-size="42" font-weight="800" fill="#172033">Mapa de empresas por componente</text>
+<text x="72" y="125" font-size="27" font-weight="800" fill="#d16931">GT 3 – Inversores / Conversores de Potência - parte 4/4</text>
+<text x="72" y="156" font-size="20" font-weight="500" fill="#4a5668">Todos os componentes, numero de CNPJs unicos e duas empresas destaque por faturamento e patentes</text>
+<rect x="1080" y="62" width="220" height="92" rx="8" fill="#ffffff" stroke="#d8d3c8"/>
+<text x="1100" y="102" font-size="34" font-weight="800" fill="#172033">4.755</text>
+<text x="1100" y="130" font-size="16" font-weight="500" fill="#5e6877">CNPJs unicos no GT</text>
+<rect x="1326" y="62" width="220" height="92" rx="8" fill="#ffffff" stroke="#d8d3c8"/>
+<text x="1346" y="102" font-size="34" font-weight="800" fill="#172033">43</text>
+<text x="1346" y="130" font-size="16" font-weight="500" fill="#5e6877">componentes com empresas</text>
+<rect x="1572" y="62" width="220" height="92" rx="8" fill="#ffffff" stroke="#d8d3c8"/>
+<text x="1592" y="102" font-size="34" font-weight="800" fill="#172033">49</text>
+<text x="1592" y="130" font-size="16" font-weight="500" fill="#5e6877">componentes do GT</text>
+<rect x="72" y="176" width="568" height="28" rx="7" fill="#d16931"/>
+<text x="88" y="196" font-size="16" font-weight="800" fill="#ffffff">Componentes 46-47</text>
+<rect x="72" y="214" width="568" height="142" rx="7" fill="#ffffff" opacity="1" stroke="#d8d3c8"/>
+<rect x="72" y="214" width="6" height="142" rx="3" fill="#d16931" opacity="1"/>
+<text x="90" y="238" font-size="16" font-weight="800" fill="#1c2637">8.3 Gases Técnicos</text>
+<text x="90" y="278" font-size="11" font-weight="500" fill="#6b7584">8. Materiais e Consumíveis</text>
+<rect x="470" y="232" width="118" height="8" rx="4" fill="#fff0e6"/>
+<rect x="470" y="232" width="42" height="8" rx="4" fill="#d16931"/>
+<text x="474" y="274" font-size="32" font-weight="800" fill="#d16931">453</text>
+<text x="474" y="296" font-size="11" font-weight="700" fill="#687386">CNPJs unicos</text>
+<text x="90" y="301" font-size="11" font-weight="800" fill="#687386">Faturamento</text>
+<text x="177" y="301" font-size="10" font-weight="500" fill="#283346">1. PETROLEO BRASILEIRO S A PETROBRAS (1B OU...</text>
+<text x="177" y="315" font-size="10" font-weight="500" fill="#283346">2. ICL AMERICA SUL (1B OU SUPERIOR)</text>
+<text x="90" y="338" font-size="11" font-weight="800" fill="#687386">Patentes</text>
+<text x="156" y="338" font-size="10" font-weight="500" fill="#283346">1. PETROLEO BRASILEIRO S A PETROBRAS</text>
+<rect x="72" y="368" width="568" height="142" rx="7" fill="#ffffff" opacity="1" stroke="#d8d3c8"/>
+<rect x="72" y="368" width="6" height="142" rx="3" fill="#d16931" opacity="1"/>
+<text x="90" y="392" font-size="16" font-weight="800" fill="#1c2637">8.4 Lubrificantes</text>
+<text x="90" y="432" font-size="11" font-weight="500" fill="#6b7584">8. Materiais e Consumíveis</text>
+<rect x="470" y="386" width="118" height="8" rx="4" fill="#fff0e6"/>
+<rect x="470" y="386" width="4" height="8" rx="4" fill="#d16931"/>
+<text x="474" y="428" font-size="32" font-weight="800" fill="#d16931">44</text>
+<text x="474" y="450" font-size="11" font-weight="700" fill="#687386">CNPJs unicos</text>
+<text x="90" y="455" font-size="11" font-weight="800" fill="#687386">Faturamento</text>
+<text x="177" y="455" font-size="10" font-weight="500" fill="#283346">1. PETROLEO BRASILEIRO S A PETROBRAS (1B OU...</text>
+<text x="177" y="469" font-size="10" font-weight="500" fill="#283346">2. PETROLEO BRASILEIRO S A PETROBRAS (1B OU...</text>
+<text x="90" y="492" font-size="11" font-weight="800" fill="#687386">Patentes</text>
+<text x="156" y="492" font-size="10" font-weight="500" fill="#283346">1. PETROLEO BRASILEIRO S A PETROBRAS</text>
+<rect x="674" y="176" width="568" height="28" rx="7" fill="#d16931"/>
+<text x="690" y="196" font-size="16" font-weight="800" fill="#ffffff">Componentes 48-49</text>
+<rect x="674" y="214" width="568" height="142" rx="7" fill="#ffffff" opacity="1" stroke="#d8d3c8"/>
+<rect x="674" y="214" width="6" height="142" rx="3" fill="#d16931" opacity="1"/>
+<text x="692" y="238" font-size="16" font-weight="800" fill="#1c2637">8.5 Fitas e Isolantes</text>
+<text x="692" y="278" font-size="11" font-weight="500" fill="#6b7584">8. Materiais e Consumíveis</text>
+<rect x="1072" y="232" width="118" height="8" rx="4" fill="#fff0e6"/>
+<rect x="1072" y="232" width="118" height="8" rx="4" fill="#d16931"/>
+<text x="1076" y="274" font-size="32" font-weight="800" fill="#d16931">1.255</text>
+<text x="1076" y="296" font-size="11" font-weight="700" fill="#687386">CNPJs unicos</text>
+<text x="692" y="301" font-size="11" font-weight="800" fill="#687386">Faturamento</text>
+<text x="779" y="301" font-size="10" font-weight="500" fill="#283346">1. MARCOPOLO (1B OU SUPERIOR)</text>
+<text x="779" y="315" font-size="10" font-weight="500" fill="#283346">2. AMCOR FLEXIBLES BRASIL EMBALAGENS (1B OU...</text>
+<text x="692" y="338" font-size="11" font-weight="800" fill="#687386">Patentes</text>
+<text x="758" y="338" font-size="10" font-weight="500" fill="#283346">1. MARCOPOLO</text>
+<rect x="674" y="368" width="568" height="142" rx="7" fill="#ffffff" opacity="1" stroke="#d8d3c8"/>
+<rect x="674" y="368" width="6" height="142" rx="3" fill="#d16931" opacity="1"/>
+<text x="692" y="392" font-size="16" font-weight="800" fill="#1c2637">8.6 Parafusos / Fixadores</text>
+<text x="692" y="432" font-size="11" font-weight="500" fill="#6b7584">8. Materiais e Consumíveis</text>
+<rect x="1072" y="386" width="118" height="8" rx="4" fill="#fff0e6"/>
+<rect x="1072" y="386" width="64" height="8" rx="4" fill="#d16931"/>
+<text x="1076" y="428" font-size="32" font-weight="800" fill="#d16931">690</text>
+<text x="1076" y="450" font-size="11" font-weight="700" fill="#687386">CNPJs unicos</text>
+<text x="692" y="455" font-size="11" font-weight="800" fill="#687386">Faturamento</text>
+<text x="779" y="455" font-size="10" font-weight="500" fill="#283346">1. DOCOL (1B OU SUPERIOR)</text>
+<text x="779" y="469" font-size="10" font-weight="500" fill="#283346">2. COMPANHIA SIDERURGICA NACIONAL (1B OU SUPERIOR)</text>
+<text x="692" y="492" font-size="11" font-weight="800" fill="#687386">Patentes</text>
+<text x="758" y="492" font-size="10" font-weight="500" fill="#283346">1. BRASILATA S A EMBALAGENS METALICAS</text>
+<text x="72" y="1034" font-size="17" font-weight="500" fill="#5e6877">Componentes sem CNPJs aparecem esmaecidos. Fat. = 2 maiores faixas de faturamento; Pat. = 2 maiores totais de patentes.</text>
+</svg>

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Empresas por subsistema</title>
+  <style>
+    @page { size: 16in 9in; margin: 0; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:#0b1422; color:#edf6ff; font-family:Inter,Segoe UI,Arial,sans-serif; }
+    .slide { width:1600px; height:900px; padding:58px 70px; background:linear-gradient(135deg,#0b1422 0%,#10243b 62%,#0e322c 100%); }
+    header { display:flex; justify-content:space-between; align-items:flex-start; gap:40px; margin-bottom:34px; }
+    h1 { margin:0; font-size:54px; line-height:1.02; letter-spacing:0; max-width:970px; }
+    .subtitle { margin-top:14px; color:#b8cee3; font-size:23px; max-width:980px; }
+    .kpis { display:grid; grid-template-columns:1fr; gap:12px; min-width:260px; }
+    .kpi { border:1px solid rgba(184,206,227,.24); border-radius:8px; padding:15px 18px; background:rgba(255,255,255,.06); }
+    .kpi strong { display:block; color:#72e3ff; font-size:36px; line-height:1; }
+    .kpi span { display:block; color:#b8cee3; font-size:15px; margin-top:6px; }
+    main { display:grid; grid-template-columns:1.08fr .92fr; gap:34px; align-items:start; }
+    .panel { border:1px solid rgba(184,206,227,.22); border-radius:10px; background:rgba(5,16,29,.58); padding:24px; }
+    h2 { margin:0 0 18px; font-size:25px; color:#dff6ff; }
+    .bar { display:grid; grid-template-columns:285px minmax(0,1fr) 90px; gap:14px; align-items:center; padding:10px 0; border-bottom:1px solid rgba(184,206,227,.14); }
+    .bar:last-child { border-bottom:0; }
+    .label strong { display:block; font-size:17px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .label span { display:block; color:#93abc2; font-size:13px; margin-top:2px; }
+    .track { height:17px; background:rgba(255,255,255,.09); border-radius:999px; overflow:hidden; }
+    .track i { display:block; height:100%; background:linear-gradient(90deg,#55c7ff,#8df0b2); border-radius:999px; }
+    .value { text-align:right; color:#82e8ff; font-size:19px; font-weight:800; }
+    table { width:100%; border-collapse:collapse; font-size:17px; }
+    th,td { padding:11px 10px; border-bottom:1px solid rgba(184,206,227,.14); text-align:left; vertical-align:top; }
+    th { color:#9fc1df; font-size:13px; text-transform:uppercase; }
+    td:nth-child(n+3), th:nth-child(n+3) { text-align:right; }
+    td:first-child { color:#fff; font-weight:700; }
+    footer { margin-top:22px; color:#9fb7cc; font-size:15px; }
+  </style>
+</head>
+<body>
+  <section class="slide">
+    <header>
+      <div>
+        <h1>Empresas relacionadas à cadeia por subsistema</h1>
+        <p class="subtitle">Ranking dos subsistemas com maior densidade de CNPJs ativos associados por CNAE aos NCMs destacados.</p>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><strong>24</strong><span>subsistemas mapeados</span></div>
+        <div class="kpi"><strong>26.574</strong><span>soma de CNPJs por subsistema</span></div>
+      </div>
+    </header>
+    <main>
+      <section class="panel">
+        <h2>Top 12 subsistemas por CNPJs únicos</h2>
+        
+            <div class="bar">
+              <div class="label">
+                <strong>8. Materiais e Consumíveis</strong>
+                <span>GT 3 – Inversores / Conversores de Potência</span>
+              </div>
+              <div class="track"><i style="width:100.00%"></i></div>
+              <div class="value">2.442</div>
+            </div>
+            
+            <div class="bar">
+              <div class="label">
+                <strong>5. Sistema Térmico</strong>
+                <span>GT 1 – Baterias</span>
+              </div>
+              <div class="track"><i style="width:95.09%"></i></div>
+              <div class="value">2.322</div>
+            </div>
+            
+            <div class="bar">
+              <div class="label">
+                <strong>2. Célula e Componentes da Célula</strong>
+                <span>GT 1 – Baterias</span>
+              </div>
+              <div class="track"><i style="width:88.21%"></i></div>
+              <div class="value">2.154</div>
+            </div>
+            
+            <div class="bar">
+              <div class="label">
+                <strong>9. Acessórios e Sistemas de Suporte</strong>
+                <span>GT 2 – Máquinas Elétricas</span>
+              </div>
+              <div class="track"><i style="width:86.73%"></i></div>
+              <div class="value">2.118</div>
+            </div>
+            
+            <div class="bar">
+              <div class="label">
+                <strong>3. Sistema Térmico</strong>
+                <span>GT 2 – Máquinas Elétricas</span>
+              </div>
+              <div class="track"><i style="width:84.89%"></i></div>
+              <div class="value">2.073</div>
+            </div>
+            
+            <div class="bar">
+              <div class="label">
+                <strong>7. Interconexões e Alta Tensão</strong>
+                <span>GT 1 – Baterias</span>
+              </div>
+              <div class="track"><i style="width:73.14%"></i></div>
+              <div class="value">1.786</div>
+            </div>
+            
+            <div class="bar">
+              <div class="label">
+                <strong>3. Módulos e Estruturas</strong>
+                <span>GT 1 – Baterias</span>
+              </div>
+              <div class="track"><i style="width:71.91%"></i></div>
+              <div class="value">1.756</div>
+            </div>
+            
+            <div class="bar">
+              <div class="label">
+                <strong>4. Gestão Térmica</strong>
+                <span>GT 3 – Inversores / Conversores de Potência</span>
+              </div>
+              <div class="track"><i style="width:66.67%"></i></div>
+              <div class="value">1.628</div>
+            </div>
+            
+            <div class="bar">
+              <div class="label">
+                <strong>5. Proteção e Segurança</strong>
+                <span>GT 3 – Inversores / Conversores de Potência</span>
+              </div>
+              <div class="track"><i style="width:66.09%"></i></div>
+              <div class="value">1.614</div>
+            </div>
+            
+            <div class="bar">
+              <div class="label">
+                <strong>6. Segurança e Proteção</strong>
+                <span>GT 1 – Baterias</span>
+              </div>
+              <div class="track"><i style="width:60.44%"></i></div>
+              <div class="value">1.476</div>
+            </div>
+            
+            <div class="bar">
+              <div class="label">
+                <strong>5. Sistema Estrutural e Mecânico</strong>
+                <span>GT 2 – Máquinas Elétricas</span>
+              </div>
+              <div class="track"><i style="width:51.47%"></i></div>
+              <div class="value">1.257</div>
+            </div>
+            
+            <div class="bar">
+              <div class="label">
+                <strong>6. Processos Produtivos</strong>
+                <span>GT 2 – Máquinas Elétricas</span>
+              </div>
+              <div class="track"><i style="width:40.21%"></i></div>
+              <div class="value">982</div>
+            </div>
+            
+      </section>
+      <section class="panel">
+        <h2>Detalhe para leitura executiva</h2>
+        <table>
+          <thead><tr><th>Subsistema</th><th>GT</th><th>Comp.</th><th>NCMs</th><th>Mun.</th><th>CNPJs</th></tr></thead>
+          <tbody><tr><td>8. Materiais e Consumíveis</td><td>GT 3 – Inversores / Conversores de Potência</td><td>6</td><td>6</td><td>372</td><td><strong>2.442</strong></td></tr><tr><td>5. Sistema Térmico</td><td>GT 1 – Baterias</td><td>5</td><td>7</td><td>360</td><td><strong>2.322</strong></td></tr><tr><td>2. Célula e Componentes da Célula</td><td>GT 1 – Baterias</td><td>5</td><td>7</td><td>318</td><td><strong>2.154</strong></td></tr><tr><td>9. Acessórios e Sistemas de Suporte</td><td>GT 2 – Máquinas Elétricas</td><td>5</td><td>5</td><td>308</td><td><strong>2.118</strong></td></tr><tr><td>3. Sistema Térmico</td><td>GT 2 – Máquinas Elétricas</td><td>4</td><td>5</td><td>308</td><td><strong>2.073</strong></td></tr><tr><td>7. Interconexões e Alta Tensão</td><td>GT 1 – Baterias</td><td>5</td><td>5</td><td>286</td><td><strong>1.786</strong></td></tr><tr><td>3. Módulos e Estruturas</td><td>GT 1 – Baterias</td><td>5</td><td>6</td><td>321</td><td><strong>1.756</strong></td></tr><tr><td>4. Gestão Térmica</td><td>GT 3 – Inversores / Conversores de Potência</td><td>6</td><td>5</td><td>298</td><td><strong>1.628</strong></td></tr></tbody>
+        </table>
+        <footer>Nota: um mesmo CNPJ pode aparecer em mais de um subsistema quando seu CNAE se relaciona a múltiplos NCMs/componentes.</footer>
+      </section>
+    </main>
+  </section>
+</body>
+</html>
